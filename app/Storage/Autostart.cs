@@ -27,7 +27,9 @@ public static class Autostart
             if (on)
             {
                 string exe = Environment.ProcessPath ?? "";
-                if (!string.IsNullOrEmpty(exe)) k?.SetValue(Name, $"\"{exe}\"");
+                // Launch-on-login starts silently in the tray; a manual double-click
+                // (no args) opens the window.
+                if (!string.IsNullOrEmpty(exe)) k?.SetValue(Name, $"\"{exe}\" --minimized");
             }
             else k?.DeleteValue(Name, throwOnMissingValue: false);
         }

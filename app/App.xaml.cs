@@ -7,6 +7,8 @@ namespace SoundDeck;
 public partial class App : System.Windows.Application
 {
     static System.Threading.Mutex? _mutex;
+    System.Threading.EventWaitHandle? _showEvent;
+    const string ShowEventName = "SoundDeck_ShowWindow";
     WinForms.NotifyIcon? _tray;
     MainWindow? _window;
     AppController? _controller;
@@ -27,7 +29,26 @@ public partial class App : System.Windows.Application
         try
         {
             _mutex = new System.Threading.Mutex(true, "SoundDeck_SingleInstance", out bool isNew);
-            if (!isNew) { Log("second instance, exiting"); Shutdown(); return; }
+            if (!isNew)
+            {
+                // Already running: ask that instance to show its window, then exit.
+                try
+                {
+                    if (System.Threading.EventWaitHandle.TryOpenExisting(ShowEventName, out var ev))
+                    {
+                        ev.Set();
+                        ev.Dispose();
+                    }
+                }
+                catch { }
+                Log("second instance -> signaled show, exiting");
+                Shutdown();
+                return;
+            }
+
+            _showEvent = new System.Threading.EventWaitHandle(false,
+                System.Threading.EventResetMode.AutoReset, ShowEventName);
+            StartShowListener();
 
             Log("creating controller");
             _controller = new AppController();
@@ -50,11 +71,29 @@ public partial class App : System.Windows.Application
             menu.Items.Add("Выход", null, (_, _) => Shutdown());
             _tray.ContextMenuStrip = menu;
 
-            if (Environment.GetEnvironmentVariable("SOUNDDECK_SHOW") == "1") _window.ShowFromTray();
+            // Manual launch opens the window; launch-on-login passes --minimized.
+            bool startMinimized = Array.Exists(e.Args, a => string.Equals(a, "--minimized", StringComparison.OrdinalIgnoreCase));
             if (Environment.GetEnvironmentVariable("SOUNDDECK_TESTMIRROR") == "1") Log(_controller.DebugTestMirror());
-            Log("startup done (in tray)");
+            if (!startMinimized) _window.ShowFromTray();
+            Log(startMinimized ? "startup done (tray, minimized)" : "startup done (window shown)");
         }
         catch (Exception ex) { Log("STARTUP EX: " + ex); }
+    }
+
+    void StartShowListener()
+    {
+        var t = new System.Threading.Thread(() =>
+        {
+            while (true)
+            {
+                try { if (!_showEvent!.WaitOne()) break; }
+                catch { break; }
+                try { Dispatcher.Invoke(() => _window?.ShowFromTray()); }
+                catch { break; }
+            }
+        })
+        { IsBackground = true, Name = "SoundDeck-ShowListener" };
+        t.Start();
     }
 
     static Icon BuildTrayIcon()
@@ -122,6 +161,7 @@ public partial class App : System.Windows.Application
     {
         if (_tray != null) { _tray.Visible = false; _tray.Dispose(); }
         _controller?.Dispose();
+        try { _showEvent?.Dispose(); } catch { }
         base.OnExit(e);
     }
 }
