@@ -12,6 +12,8 @@ A modern Windows tray app for per-app audio routing, volume, mirroring and layou
 ![License](https://img.shields.io/badge/license-MIT-green)
 ![Themes](https://img.shields.io/badge/themes-20-ff4fd8)
 
+**English** · [中文](README.zh.md) · [Español](README.es.md) · [Русский](README.ru.md) · [Deutsch](README.de.md) · [日本語](README.ja.md)
+
 <img src="docs/theme-neu.png" width="720" alt="SoundDeck board" />
 
 </div>

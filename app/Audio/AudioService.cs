@@ -14,6 +14,8 @@ public class AudioService : IMMNotificationClient, IDisposable
     readonly Dictionary<string, string> _iconCache = new();  // exe path -> base64 png
     System.Threading.Timer? _debounce;
 
+    public bool GroupApps { get; set; } = true;  // one card per app vs one per process
+
     public event Action? Changed;
 
     public AudioService()
@@ -79,7 +81,9 @@ public class AudioService : IMMNotificationClient, IDisposable
                 if (pid == self) continue;              // hide our own mirror playback session
 
                 string exe = ExePath(pid);
-                string key = string.IsNullOrEmpty(exe) ? "pid:" + pid : exe.ToLowerInvariant();
+                string key = (GroupApps && !string.IsNullOrEmpty(exe))
+                    ? exe.ToLowerInvariant()
+                    : "pid:" + pid;
                 if (result.ContainsKey(key)) continue;
 
                 var dto = new SessionDto
@@ -174,7 +178,7 @@ public class AudioService : IMMNotificationClient, IDisposable
     IEnumerable<uint> PidsOfApp(uint pid)
     {
         string exe = ExePath(pid);
-        if (string.IsNullOrEmpty(exe)) return new[] { pid };
+        if (!GroupApps || string.IsNullOrEmpty(exe)) return new[] { pid };
         var set = new HashSet<uint>();
         foreach (var dev in ActiveRender())
         {
@@ -217,6 +221,7 @@ public class AudioService : IMMNotificationClient, IDisposable
     void WithSession(uint pid, Action<AudioSessionControl> action)
     {
         string exe = ExePath(pid);
+        bool byExe = GroupApps && !string.IsNullOrEmpty(exe);
         foreach (var dev in ActiveRender())
         {
             SessionCollection sessions;
@@ -226,7 +231,7 @@ public class AudioService : IMMNotificationClient, IDisposable
             {
                 var s = sessions[i];
                 uint sp = s.GetProcessID;
-                bool match = string.IsNullOrEmpty(exe) ? sp == pid : ExePath(sp) == exe;
+                bool match = byExe ? ExePath(sp) == exe : sp == pid;
                 if (match) { try { action(s); } catch { } }
             }
         }

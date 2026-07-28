@@ -36,7 +36,9 @@ public class SettingsDto
     public string? ActiveProfileId { get; set; }
     public string? MirrorSecondaryDeviceId { get; set; }  // null = mirror off
     public bool Autostart { get; set; }
-    public string Theme { get; set; } = "neu";            // "neu" | "glass"
+    public string Theme { get; set; } = "neu";            // "neu" | "glass" | ...
+    public bool GroupApps { get; set; } = true;           // merge multi-process apps into one card
+    public string Language { get; set; } = "";            // "" = auto (system), else e.g. "en","ru"
 }
 
 public class StateDto

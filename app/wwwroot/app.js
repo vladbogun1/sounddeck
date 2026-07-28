@@ -34,16 +34,31 @@ function deviceIcon(bus) {
 // ---- render ----
 function render() {
   applyTheme();
+  applyI18n();
   renderHealth();
   renderBoard();
   renderProfiles();
   renderSettings();
 }
 
+function setText(id, s) { const el = document.getElementById(id); if (el) el.textContent = s; }
+function setTitle(id, s) { const el = document.getElementById(id); if (el) el.title = s; }
+
+function applyI18n() {
+  document.documentElement.lang = currentLang();
+  setText("t_autoheal", t("autoheal_t"));  setText("d_autoheal", t("autoheal_d"));
+  setText("t_autostart", t("autostart_t")); setText("d_autostart", t("autostart_d"));
+  setText("t_group", t("group_t"));        setText("d_group", t("group_d"));
+  setText("t_theme", t("theme_t"));         setText("t_lang", t("language_t"));
+  setText("saveProfileLbl", t("save_layout"));
+  setTitle("settingsBtn", t("settings"));   setTitle("closeBtn", t("minimize"));
+  setTitle("profilesBtn", t("profiles"));
+}
+
 function renderHealth() {
   const line = document.getElementById("healthLine");
   const def = state.devices.find(d => d.isDefault);
-  line.textContent = def ? `по умолчанию: ${def.name}` : "нет устройства по умолчанию";
+  line.textContent = def ? `${t("default_prefix")} ${def.name}` : t("no_default");
 }
 
 function applyTheme() {
@@ -71,8 +86,8 @@ function renderBoard() {
       <div class="col-head">
         <span class="col-icon">${deviceIcon(dev.bus)}</span>
         <span class="col-name">${escapeHtml(dev.name)}</span>
-        ${dev.isDefault ? '<span class="badge">по умолч.</span>' : ""}
-        ${isMirrorTarget ? '<span class="badge mirror">дубль</span>' : ""}
+        ${dev.isDefault ? `<span class="badge">${t("badge_default")}</span>` : ""}
+        ${isMirrorTarget ? `<span class="badge mirror">${t("badge_mirror")}</span>` : ""}
       </div>
       <div class="col-sub">${dev.volume}%${dev.muted ? " · выкл" : ""}</div>
       <div class="col-vol"></div>
@@ -91,16 +106,15 @@ function renderBoard() {
     if (!dev.isDefault) {
       const setDef = document.createElement("button");
       setDef.className = "mini";
-      setDef.innerHTML = '<i class="fa-solid fa-star"></i> сделать осн.';
+      setDef.innerHTML = `<i class="fa-solid fa-star"></i> ${t("set_default")}`;
       setDef.onclick = () => send({ cmd: "setDefault", deviceId: dev.id });
       tools.appendChild(setDef);
 
       const mir = document.createElement("button");
       mir.className = "mini" + (isMirrorTarget ? " active" : "");
       mir.innerHTML = isMirrorTarget
-        ? '<i class="fa-solid fa-minus"></i> дубль'
-        : '<i class="fa-solid fa-clone"></i> дубль';
-      mir.title = "Дублировать сюда основной звук (и там, и там сразу)";
+        ? `<i class="fa-solid fa-minus"></i> ${t("mirror")}`
+        : `<i class="fa-solid fa-clone"></i> ${t("mirror")}`;
       mir.onclick = () => send({ cmd: "setMirror", deviceId: isMirrorTarget ? null : dev.id });
       tools.appendChild(mir);
     } else {
@@ -110,7 +124,7 @@ function renderBoard() {
     const cards = col.querySelector(".cards");
     const list = sessionsForDevice(dev);
     if (list.length === 0) {
-      cards.innerHTML = '<div class="empty">перетащи приложение сюда</div>';
+      cards.innerHTML = `<div class="empty">${t("drop_here")}</div>`;
     } else {
       list.forEach(s => cards.appendChild(buildCard(s)));
     }
@@ -133,13 +147,13 @@ function buildCard(s) {
   const row = document.createElement("div");
   row.className = "card-row";
   row.innerHTML = `
-    <span class="grip" title="Перетащи на другое устройство"><i class="fa-solid fa-grip-vertical"></i></span>
+    <span class="grip" title="${t("drag_hint")}"><i class="fa-solid fa-grip-vertical"></i></span>
     <div class="app-ico">${ico}</div>
     <div class="app-meta">
       <div class="app-name">${escapeHtml(s.name)}</div>
       <div class="app-hint">${s.volume}%</div>
     </div>
-    <button class="mute-btn ${s.muted ? "muted" : ""}" title="Заглушить"><i class="fa-solid ${s.muted ? "fa-volume-xmark" : "fa-volume-high"}"></i></button>
+    <button class="mute-btn ${s.muted ? "muted" : ""}" title="${t("mute")}"><i class="fa-solid ${s.muted ? "fa-volume-xmark" : "fa-volume-high"}"></i></button>
   `;
   row.querySelector(".mute-btn").onclick = (e) => {
     e.stopPropagation();
@@ -251,7 +265,7 @@ function buildSlider(value, onChange) {
 // ---- profiles ----
 function renderProfiles() {
   const active = state.profiles.find(p => p.id === state.settings.activeProfileId);
-  document.getElementById("activeProfileName").textContent = active ? active.name : "Профили";
+  document.getElementById("activeProfileName").textContent = active ? active.name : t("profiles");
   document.getElementById("profilesBtn").classList.toggle("has-active", !!active);
 
   const list = document.getElementById("profilesList");
@@ -259,7 +273,7 @@ function renderProfiles() {
   if (state.profiles.length === 0) {
     const hint = document.createElement("div");
     hint.className = "pop-empty";
-    hint.textContent = "Пока нет профилей. Сохрани текущую раскладку кнопкой ниже.";
+    hint.textContent = t("no_profiles");
     list.appendChild(hint);
   }
   state.profiles.forEach(p => {
@@ -277,27 +291,59 @@ function renderProfiles() {
 }
 
 const THEMES = [
-  { id: "neu",        name: "Необрутализм",   sw: "linear-gradient(135deg,#ffd64b 55%,#14110b 55%)" },
-  { id: "glass",      name: "Тёмное стекло",  sw: "linear-gradient(135deg,#6d8bff,#a06dff)" },
-  { id: "win11",      name: "Windows 11",     sw: "linear-gradient(135deg,#f6f6f6 55%,#005fb8 55%)" },
-  { id: "ios",        name: "iOS стекло",     sw: "linear-gradient(135deg,#5ac8fa,#af52de)" },
-  { id: "material",   name: "Material",       sw: "linear-gradient(135deg,#fafafa 55%,#6200ee 55%)" },
-  { id: "paper",      name: "Бумага",         sw: "linear-gradient(135deg,#ffffff 55%,#1f6feb 55%)" },
-  { id: "solarized",  name: "Solarized",      sw: "linear-gradient(135deg,#fdf6e3 55%,#268bd2 55%)" },
-  { id: "dracula",    name: "Dracula",        sw: "linear-gradient(135deg,#282a36 45%,#bd93f9 45%)" },
-  { id: "nord",       name: "Nord",           sw: "linear-gradient(135deg,#2e3440 45%,#88c0d0 45%)" },
-  { id: "gruvbox",    name: "Gruvbox",        sw: "linear-gradient(135deg,#282828 45%,#fabd2f 45%)" },
-  { id: "monokai",    name: "Monokai",        sw: "linear-gradient(135deg,#272822 45%,#a6e22e 45%)" },
-  { id: "catppuccin", name: "Catppuccin",     sw: "linear-gradient(135deg,#1e1e2e 45%,#cba6f7 45%)" },
-  { id: "rose",       name: "Rosé Pine",      sw: "linear-gradient(135deg,#191724 45%,#ebbcba 45%)" },
-  { id: "oled",       name: "OLED чёрный",    sw: "linear-gradient(135deg,#000000 55%,#2f81f7 55%)" },
-  { id: "matrix",     name: "Matrix",         sw: "linear-gradient(135deg,#000600 45%,#00ff66 45%)" },
-  { id: "forest",     name: "Лес",            sw: "linear-gradient(135deg,#0f1f17 45%,#4ade80 45%)" },
-  { id: "ocean",      name: "Океан",          sw: "linear-gradient(135deg,#06243b 45%,#38bdf8 45%)" },
-  { id: "sunset",     name: "Закат",          sw: "linear-gradient(135deg,#ff8a42,#ff5c96 55%,#8c3cb4)" },
-  { id: "synthwave",  name: "Synthwave",      sw: "linear-gradient(135deg,#ff4fd8,#4fd1ff)" },
-  { id: "cyberpunk",  name: "Cyberpunk",      sw: "linear-gradient(135deg,#0a0e17 40%,#fcee0a 40%,#00f0ff)" },
+  { id: "neu",        name: "Neubrutalism", sw: "linear-gradient(135deg,#ffd64b 55%,#14110b 55%)" },
+  { id: "glass",      name: "Dark glass",   sw: "linear-gradient(135deg,#6d8bff,#a06dff)" },
+  { id: "win11",      name: "Windows 11",   sw: "linear-gradient(135deg,#f6f6f6 55%,#005fb8 55%)" },
+  { id: "ios",        name: "iOS glass",    sw: "linear-gradient(135deg,#5ac8fa,#af52de)" },
+  { id: "material",   name: "Material",     sw: "linear-gradient(135deg,#fafafa 55%,#6200ee 55%)" },
+  { id: "paper",      name: "Paper",        sw: "linear-gradient(135deg,#ffffff 55%,#1f6feb 55%)" },
+  { id: "solarized",  name: "Solarized",    sw: "linear-gradient(135deg,#fdf6e3 55%,#268bd2 55%)" },
+  { id: "dracula",    name: "Dracula",      sw: "linear-gradient(135deg,#282a36 45%,#bd93f9 45%)" },
+  { id: "nord",       name: "Nord",         sw: "linear-gradient(135deg,#2e3440 45%,#88c0d0 45%)" },
+  { id: "gruvbox",    name: "Gruvbox",      sw: "linear-gradient(135deg,#282828 45%,#fabd2f 45%)" },
+  { id: "monokai",    name: "Monokai",      sw: "linear-gradient(135deg,#272822 45%,#a6e22e 45%)" },
+  { id: "catppuccin", name: "Catppuccin",   sw: "linear-gradient(135deg,#1e1e2e 45%,#cba6f7 45%)" },
+  { id: "rose",       name: "Rosé Pine",    sw: "linear-gradient(135deg,#191724 45%,#ebbcba 45%)" },
+  { id: "oled",       name: "OLED",         sw: "linear-gradient(135deg,#000000 55%,#2f81f7 55%)" },
+  { id: "matrix",     name: "Matrix",       sw: "linear-gradient(135deg,#000600 45%,#00ff66 45%)" },
+  { id: "forest",     name: "Forest",       sw: "linear-gradient(135deg,#0f1f17 45%,#4ade80 45%)" },
+  { id: "ocean",      name: "Ocean",        sw: "linear-gradient(135deg,#06243b 45%,#38bdf8 45%)" },
+  { id: "sunset",     name: "Sunset",       sw: "linear-gradient(135deg,#ff8a42,#ff5c96 55%,#8c3cb4)" },
+  { id: "synthwave",  name: "Synthwave",    sw: "linear-gradient(135deg,#ff4fd8,#4fd1ff)" },
+  { id: "cyberpunk",  name: "Cyberpunk",    sw: "linear-gradient(135deg,#0a0e17 40%,#fcee0a 40%,#00f0ff)" },
 ];
+
+// ---- i18n ----
+const LANGS = [
+  { id: "en", name: "English" },
+  { id: "ru", name: "Русский" },
+  { id: "uk", name: "Українська" },
+  { id: "zh", name: "中文" },
+  { id: "es", name: "Español" },
+  { id: "de", name: "Deutsch" },
+  { id: "fr", name: "Français" },
+  { id: "ja", name: "日本語" },
+];
+const I18N = {
+  en: { default_prefix:"default:", no_default:"no default device", set_default:"make default", mirror:"mirror", badge_default:"default", badge_mirror:"mirror", drop_here:"drop an app here", profiles:"Profiles", save_layout:"Save current layout", no_profiles:"No profiles yet. Save the current layout with the button below.", mute:"Mute", drag_hint:"Drag to another device", settings:"Settings", minimize:"Minimize to tray", autoheal_t:"Auto-heal", autoheal_d:"Restores your layout if Windows resets audio", autostart_t:"Launch on login", autostart_d:"Start SoundDeck when you sign in", group_t:"Group app processes", group_d:"Show multi-process apps (Spotify, Chrome…) as one card", theme_t:"Theme", language_t:"Language", save_prompt:"Profile name:", profile_default:"Profile" },
+  ru: { default_prefix:"по умолчанию:", no_default:"нет устройства по умолчанию", set_default:"сделать осн.", mirror:"дубль", badge_default:"по умолч.", badge_mirror:"дубль", drop_here:"перетащи приложение сюда", profiles:"Профили", save_layout:"Сохранить текущую раскладку", no_profiles:"Профилей пока нет. Сохрани текущую раскладку кнопкой ниже.", mute:"Заглушить", drag_hint:"Перетащи на другое устройство", settings:"Настройки", minimize:"Свернуть в трей", autoheal_t:"Авто-лечилка", autoheal_d:"Возвращает раскладку, если Windows сбросил звук", autostart_t:"Автозапуск", autostart_d:"Запускать SoundDeck при входе в систему", group_t:"Группировать процессы", group_d:"Показывать многопроцессные приложения (Spotify, Chrome…) одной карточкой", theme_t:"Тема", language_t:"Язык", save_prompt:"Название профиля:", profile_default:"Профиль" },
+  uk: { default_prefix:"за замовчуванням:", no_default:"немає пристрою за замовчуванням", set_default:"зробити осн.", mirror:"дубль", badge_default:"за замовч.", badge_mirror:"дубль", drop_here:"перетягни застосунок сюди", profiles:"Профілі", save_layout:"Зберегти поточне розкладання", no_profiles:"Профілів поки немає. Збережи поточне розкладання кнопкою нижче.", mute:"Вимкнути звук", drag_hint:"Перетягни на інший пристрій", settings:"Налаштування", minimize:"Згорнути в трей", autoheal_t:"Авто-відновлення", autoheal_d:"Повертає розкладання, якщо Windows скинув звук", autostart_t:"Автозапуск", autostart_d:"Запускати SoundDeck під час входу", group_t:"Групувати процеси", group_d:"Показувати багатопроцесні застосунки (Spotify, Chrome…) однією карткою", theme_t:"Тема", language_t:"Мова", save_prompt:"Назва профілю:", profile_default:"Профіль" },
+  zh: { default_prefix:"默认：", no_default:"没有默认设备", set_default:"设为默认", mirror:"镜像", badge_default:"默认", badge_mirror:"镜像", drop_here:"将应用拖到这里", profiles:"配置", save_layout:"保存当前布局", no_profiles:"还没有配置。用下面的按钮保存当前布局。", mute:"静音", drag_hint:"拖到其他设备", settings:"设置", minimize:"最小化到托盘", autoheal_t:"自动修复", autoheal_d:"当 Windows 重置音频时恢复你的布局", autostart_t:"开机启动", autostart_d:"登录时启动 SoundDeck", group_t:"合并应用进程", group_d:"将多进程应用（Spotify、Chrome…）显示为一张卡片", theme_t:"主题", language_t:"语言", save_prompt:"配置名称：", profile_default:"配置" },
+  es: { default_prefix:"predeterminado:", no_default:"sin dispositivo predeterminado", set_default:"predeterminar", mirror:"duplicar", badge_default:"predet.", badge_mirror:"duplicado", drop_here:"arrastra una app aquí", profiles:"Perfiles", save_layout:"Guardar diseño actual", no_profiles:"Aún no hay perfiles. Guarda el diseño actual con el botón de abajo.", mute:"Silenciar", drag_hint:"Arrastra a otro dispositivo", settings:"Ajustes", minimize:"Minimizar a la bandeja", autoheal_t:"Auto-reparación", autoheal_d:"Restaura tu diseño si Windows reinicia el audio", autostart_t:"Iniciar con el sistema", autostart_d:"Abrir SoundDeck al iniciar sesión", group_t:"Agrupar procesos", group_d:"Mostrar apps multiproceso (Spotify, Chrome…) como una tarjeta", theme_t:"Tema", language_t:"Idioma", save_prompt:"Nombre del perfil:", profile_default:"Perfil" },
+  de: { default_prefix:"Standard:", no_default:"kein Standardgerät", set_default:"als Standard", mirror:"Spiegeln", badge_default:"Standard", badge_mirror:"Spiegel", drop_here:"App hierher ziehen", profiles:"Profile", save_layout:"Aktuelles Layout speichern", no_profiles:"Noch keine Profile. Speichere das aktuelle Layout mit der Schaltfläche unten.", mute:"Stumm", drag_hint:"Auf ein anderes Gerät ziehen", settings:"Einstellungen", minimize:"In die Taskleiste", autoheal_t:"Auto-Reparatur", autoheal_d:"Stellt dein Layout wieder her, wenn Windows den Ton zurücksetzt", autostart_t:"Autostart", autostart_d:"SoundDeck bei der Anmeldung starten", group_t:"Prozesse gruppieren", group_d:"Mehrprozess-Apps (Spotify, Chrome…) als eine Karte anzeigen", theme_t:"Design", language_t:"Sprache", save_prompt:"Profilname:", profile_default:"Profil" },
+  fr: { default_prefix:"par défaut :", no_default:"aucun périphérique par défaut", set_default:"par défaut", mirror:"dupliquer", badge_default:"défaut", badge_mirror:"miroir", drop_here:"glissez une app ici", profiles:"Profils", save_layout:"Enregistrer la disposition", no_profiles:"Aucun profil. Enregistrez la disposition actuelle avec le bouton ci-dessous.", mute:"Couper le son", drag_hint:"Glisser vers un autre périphérique", settings:"Paramètres", minimize:"Réduire dans la barre", autoheal_t:"Auto-réparation", autoheal_d:"Restaure votre disposition si Windows réinitialise l'audio", autostart_t:"Lancer au démarrage", autostart_d:"Démarrer SoundDeck à la connexion", group_t:"Grouper les processus", group_d:"Afficher les apps multi-processus (Spotify, Chrome…) en une carte", theme_t:"Thème", language_t:"Langue", save_prompt:"Nom du profil :", profile_default:"Profil" },
+  ja: { default_prefix:"既定：", no_default:"既定のデバイスなし", set_default:"既定にする", mirror:"ミラー", badge_default:"既定", badge_mirror:"ミラー", drop_here:"アプリをここにドロップ", profiles:"プロファイル", save_layout:"現在の配置を保存", no_profiles:"プロファイルはまだありません。下のボタンで現在の配置を保存してください。", mute:"ミュート", drag_hint:"別のデバイスへドラッグ", settings:"設定", minimize:"トレイに最小化", autoheal_t:"自動修復", autoheal_d:"Windows が音声をリセットしたら配置を復元します", autostart_t:"ログイン時に起動", autostart_d:"サインイン時に SoundDeck を起動", group_t:"アプリのプロセスをまとめる", group_d:"複数プロセスのアプリ（Spotify、Chrome…）を1枚のカードに表示", theme_t:"テーマ", language_t:"言語", save_prompt:"プロファイル名：", profile_default:"プロファイル" },
+};
+function currentLang() {
+  const s = state.settings && state.settings.language;
+  if (s && I18N[s]) return s;
+  const n = (navigator.language || "en").slice(0, 2).toLowerCase();
+  return I18N[n] ? n : "en";
+}
+function t(k) {
+  const l = currentLang();
+  return (I18N[l] && I18N[l][k]) || I18N.en[k] || k;
+}
 
 function renderSettings() {
   setSwitch(document.getElementById("autohealSwitch"), !!state.settings.autoHeal);
@@ -323,6 +369,25 @@ function renderSettings() {
     };
     menu.appendChild(o);
   });
+
+  // grouping toggle
+  setSwitch(document.getElementById("groupSwitch"), state.settings.groupApps !== false);
+
+  // language dropdown
+  const lang = currentLang();
+  const lcur = LANGS.find(x => x.id === lang) || LANGS[0];
+  document.getElementById("langCurrent").textContent = lcur.name;
+  const lmenu = document.getElementById("langDropMenu");
+  lmenu.innerHTML = "";
+  LANGS.forEach(x => {
+    const o = document.createElement("div");
+    o.className = "theme-opt" + (x.id === lang ? " active" : "");
+    o.setAttribute("role", "option");
+    o.innerHTML = `<span class="theme-opt-name">${x.name}</span>` +
+      (x.id === lang ? ' <i class="fa-solid fa-check ok"></i>' : "");
+    o.onclick = () => { send({ cmd: "setLanguage", value: x.id }); lmenu.hidden = true; };
+    lmenu.appendChild(o);
+  });
 }
 
 function setSwitch(el, on) { el.classList.toggle("on", on); }
@@ -335,8 +400,10 @@ const profilesPop = document.getElementById("profilesPop");
 function closePops() {
   settingsPop.hidden = true;
   profilesPop.hidden = true;
-  const tm = document.getElementById("themeDropMenu");
-  if (tm) tm.hidden = true;
+  for (const id of ["themeDropMenu", "langDropMenu"]) {
+    const m = document.getElementById(id);
+    if (m) m.hidden = true;
+  }
 }
 
 document.getElementById("settingsBtn").onclick = (e) => {
@@ -361,17 +428,28 @@ document.getElementById("autohealSwitch").onclick = () =>
 document.getElementById("autostartSwitch").onclick = () =>
   send({ cmd: "setAutostart", value: !state.settings.autostart });
 
+document.getElementById("groupSwitch").onclick = () =>
+  send({ cmd: "setGroupApps", value: state.settings.groupApps === false });
+
 const themeMenu = document.getElementById("themeDropMenu");
+const langMenu = document.getElementById("langDropMenu");
 document.getElementById("themeDropBtn").onclick = (e) => {
   e.stopPropagation();
+  langMenu.hidden = true;
   themeMenu.hidden = !themeMenu.hidden;
+};
+document.getElementById("langDropBtn").onclick = (e) => {
+  e.stopPropagation();
+  themeMenu.hidden = true;
+  langMenu.hidden = !langMenu.hidden;
 };
 document.addEventListener("click", (e) => {
   if (!e.target.closest("#themeDrop")) themeMenu.hidden = true;
+  if (!e.target.closest("#langDrop")) langMenu.hidden = true;
 });
 
 document.getElementById("saveProfileBtn").onclick = () => {
-  const name = window.prompt("Название профиля:", "Профиль");
+  const name = window.prompt(t("save_prompt"), t("profile_default"));
   if (name !== null) send({ cmd: "saveProfile", name: name });
 };
 
@@ -400,7 +478,7 @@ if (!bridge) {
       { pid: 4, name: "Telegram Desktop", exe: "telegram.exe", iconB64: "", volume: 100, muted: false, outputDeviceId: "", mirrored: false },
     ],
     profiles: [{ id: "p1", name: "Default" }],
-    settings: { autoHeal: true, autostart: false, theme: "neu", activeProfileId: "p1" },
+    settings: { autoHeal: true, autostart: false, theme: "neu", activeProfileId: "p1", groupApps: true, language: "" },
     mirrorActive: false,
   };
   render();

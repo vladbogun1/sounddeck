@@ -29,33 +29,51 @@
 
       <div class="settings-pop profiles-pop" id="profilesPop" hidden>
         <div class="pop-list" id="profilesList"></div>
-        <button class="ghost accent full" id="saveProfileBtn"><i class="fa-solid fa-plus"></i> Сохранить текущую раскладку</button>
+        <button class="ghost accent full" id="saveProfileBtn"><i class="fa-solid fa-plus"></i> <span id="saveProfileLbl"></span></button>
       </div>
 
       <div class="settings-pop" id="settingsPop" hidden>
         <div class="set-row">
           <div>
-            <div class="set-title">Авто-лечилка</div>
-            <div class="set-desc">Возвращает раскладку, если Windows сбросил звук</div>
+            <div class="set-title" id="t_autoheal">Auto-heal</div>
+            <div class="set-desc" id="d_autoheal"></div>
           </div>
           <button class="switch" id="autohealSwitch" role="switch"><span></span></button>
         </div>
         <div class="set-row">
           <div>
-            <div class="set-title">Автозапуск</div>
-            <div class="set-desc">Запускать SoundDeck при входе в систему</div>
+            <div class="set-title" id="t_autostart">Launch on login</div>
+            <div class="set-desc" id="d_autostart"></div>
           </div>
           <button class="switch" id="autostartSwitch" role="switch"><span></span></button>
         </div>
+        <div class="set-row">
+          <div>
+            <div class="set-title" id="t_group">Group app processes</div>
+            <div class="set-desc" id="d_group"></div>
+          </div>
+          <button class="switch" id="groupSwitch" role="switch"><span></span></button>
+        </div>
         <div class="set-row col">
-          <div class="set-title">Тема</div>
+          <div class="set-title" id="t_theme">Theme</div>
           <div class="theme-drop" id="themeDrop">
             <button class="theme-drop-btn" id="themeDropBtn" aria-haspopup="listbox">
               <span class="sw" id="themeSw"></span>
-              <span class="theme-cur" id="themeCurrent">Необрутализм</span>
+              <span class="theme-cur" id="themeCurrent"></span>
               <i class="fa-solid fa-chevron-down chev"></i>
             </button>
             <div class="theme-drop-menu" id="themeDropMenu" role="listbox" hidden></div>
+          </div>
+        </div>
+        <div class="set-row col">
+          <div class="set-title" id="t_lang">Language</div>
+          <div class="theme-drop" id="langDrop">
+            <button class="theme-drop-btn" id="langDropBtn" aria-haspopup="listbox">
+              <i class="fa-solid fa-globe" style="width:18px;text-align:center"></i>
+              <span class="theme-cur" id="langCurrent"></span>
+              <i class="fa-solid fa-chevron-down chev"></i>
+            </button>
+            <div class="theme-drop-menu" id="langDropMenu" role="listbox" hidden></div>
           </div>
         </div>
       </div>

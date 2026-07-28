@@ -15,6 +15,7 @@ public class AppController : IDisposable
 
     public AppController()
     {
+        _audio.GroupApps = _store.Settings.GroupApps;
         _audio.Changed += OnAudioChanged;
         // Restore mirror if it was on.
         if (_store.Settings.MirrorSecondaryDeviceId is string sec)
@@ -31,6 +32,7 @@ public class AppController : IDisposable
 
     public StateDto BuildState()
     {
+        _audio.GroupApps = _store.Settings.GroupApps;
         var devices = _audio.GetDevices();
         var sessions = _audio.GetSessions();
         var deviceIds = devices.Select(d => d.Id).ToHashSet();
@@ -148,6 +150,21 @@ public class AppController : IDisposable
     public void SetTheme(string theme)
     {
         _store.Settings.Theme = Themes.Contains(theme) ? theme : "neu";
+        _store.SaveSettings();
+        StateChanged?.Invoke();
+    }
+
+    public void SetGroupApps(bool on)
+    {
+        _store.Settings.GroupApps = on;
+        _audio.GroupApps = on;
+        _store.SaveSettings();
+        StateChanged?.Invoke();
+    }
+
+    public void SetLanguage(string lang)
+    {
+        _store.Settings.Language = lang ?? "";
         _store.SaveSettings();
         StateChanged?.Invoke();
     }

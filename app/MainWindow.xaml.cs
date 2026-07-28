@@ -124,6 +124,12 @@ public partial class MainWindow : Window
                 case "setTheme":
                     _controller.SetTheme(Str(root, "value"));
                     break;
+                case "setGroupApps":
+                    _controller.SetGroupApps(root.GetProperty("value").GetBoolean());
+                    break;
+                case "setLanguage":
+                    _controller.SetLanguage(Str(root, "value"));
+                    break;
                 case "setMirror":
                     _controller.SetMirror(root.TryGetProperty("deviceId", out var d) ? d.GetString() : null);
                     break;
