@@ -13,7 +13,7 @@ let pendingRender = false;
 if (bridge) {
   bridge.addEventListener("message", (e) => {
     const d = e.data;
-    if (d && d.type === "closePops") { closePops(); return; }
+    if (d && d.type === "closePops") { closePops(); setSettings(false); return; }
     state = d;
     const json = JSON.stringify(state);
     if (json === lastJson) return;   // nothing changed → no flicker
@@ -51,7 +51,9 @@ function applyI18n() {
   setText("t_group", t("group_t"));        setText("d_group", t("group_d"));
   setText("t_theme", t("theme_t"));         setText("t_lang", t("language_t"));
   setText("saveProfileLbl", t("save_layout"));
-  setTitle("settingsBtn", t("settings"));   setTitle("closeBtn", t("minimize"));
+  setText("settingsTitle", t("settings"));
+  setTitle("settingsBtn", settingsOpen ? t("back") : t("settings"));
+  setTitle("closeBtn", t("minimize"));
   setTitle("profilesBtn", t("profiles"));
 }
 
@@ -325,14 +327,14 @@ const LANGS = [
   { id: "ja", name: "日本語" },
 ];
 const I18N = {
-  en: { default_prefix:"default:", no_default:"no default device", set_default:"make default", mirror:"mirror", badge_default:"default", badge_mirror:"mirror", drop_here:"drop an app here", profiles:"Profiles", save_layout:"Save current layout", no_profiles:"No profiles yet. Save the current layout with the button below.", mute:"Mute", drag_hint:"Drag to another device", settings:"Settings", minimize:"Minimize to tray", autoheal_t:"Auto-heal", autoheal_d:"Restores your layout if Windows resets audio", autostart_t:"Launch on login", autostart_d:"Start SoundDeck when you sign in", group_t:"Group app processes", group_d:"Show multi-process apps (Spotify, Chrome…) as one card", theme_t:"Theme", language_t:"Language", save_prompt:"Profile name:", profile_default:"Profile" },
-  ru: { default_prefix:"по умолчанию:", no_default:"нет устройства по умолчанию", set_default:"сделать осн.", mirror:"дубль", badge_default:"по умолч.", badge_mirror:"дубль", drop_here:"перетащи приложение сюда", profiles:"Профили", save_layout:"Сохранить текущую раскладку", no_profiles:"Профилей пока нет. Сохрани текущую раскладку кнопкой ниже.", mute:"Заглушить", drag_hint:"Перетащи на другое устройство", settings:"Настройки", minimize:"Свернуть в трей", autoheal_t:"Авто-лечилка", autoheal_d:"Возвращает раскладку, если Windows сбросил звук", autostart_t:"Автозапуск", autostart_d:"Запускать SoundDeck при входе в систему", group_t:"Группировать процессы", group_d:"Показывать многопроцессные приложения (Spotify, Chrome…) одной карточкой", theme_t:"Тема", language_t:"Язык", save_prompt:"Название профиля:", profile_default:"Профиль" },
-  uk: { default_prefix:"за замовчуванням:", no_default:"немає пристрою за замовчуванням", set_default:"зробити осн.", mirror:"дубль", badge_default:"за замовч.", badge_mirror:"дубль", drop_here:"перетягни застосунок сюди", profiles:"Профілі", save_layout:"Зберегти поточне розкладання", no_profiles:"Профілів поки немає. Збережи поточне розкладання кнопкою нижче.", mute:"Вимкнути звук", drag_hint:"Перетягни на інший пристрій", settings:"Налаштування", minimize:"Згорнути в трей", autoheal_t:"Авто-відновлення", autoheal_d:"Повертає розкладання, якщо Windows скинув звук", autostart_t:"Автозапуск", autostart_d:"Запускати SoundDeck під час входу", group_t:"Групувати процеси", group_d:"Показувати багатопроцесні застосунки (Spotify, Chrome…) однією карткою", theme_t:"Тема", language_t:"Мова", save_prompt:"Назва профілю:", profile_default:"Профіль" },
-  zh: { default_prefix:"默认：", no_default:"没有默认设备", set_default:"设为默认", mirror:"镜像", badge_default:"默认", badge_mirror:"镜像", drop_here:"将应用拖到这里", profiles:"配置", save_layout:"保存当前布局", no_profiles:"还没有配置。用下面的按钮保存当前布局。", mute:"静音", drag_hint:"拖到其他设备", settings:"设置", minimize:"最小化到托盘", autoheal_t:"自动修复", autoheal_d:"当 Windows 重置音频时恢复你的布局", autostart_t:"开机启动", autostart_d:"登录时启动 SoundDeck", group_t:"合并应用进程", group_d:"将多进程应用（Spotify、Chrome…）显示为一张卡片", theme_t:"主题", language_t:"语言", save_prompt:"配置名称：", profile_default:"配置" },
-  es: { default_prefix:"predeterminado:", no_default:"sin dispositivo predeterminado", set_default:"predeterminar", mirror:"duplicar", badge_default:"predet.", badge_mirror:"duplicado", drop_here:"arrastra una app aquí", profiles:"Perfiles", save_layout:"Guardar diseño actual", no_profiles:"Aún no hay perfiles. Guarda el diseño actual con el botón de abajo.", mute:"Silenciar", drag_hint:"Arrastra a otro dispositivo", settings:"Ajustes", minimize:"Minimizar a la bandeja", autoheal_t:"Auto-reparación", autoheal_d:"Restaura tu diseño si Windows reinicia el audio", autostart_t:"Iniciar con el sistema", autostart_d:"Abrir SoundDeck al iniciar sesión", group_t:"Agrupar procesos", group_d:"Mostrar apps multiproceso (Spotify, Chrome…) como una tarjeta", theme_t:"Tema", language_t:"Idioma", save_prompt:"Nombre del perfil:", profile_default:"Perfil" },
-  de: { default_prefix:"Standard:", no_default:"kein Standardgerät", set_default:"als Standard", mirror:"Spiegeln", badge_default:"Standard", badge_mirror:"Spiegel", drop_here:"App hierher ziehen", profiles:"Profile", save_layout:"Aktuelles Layout speichern", no_profiles:"Noch keine Profile. Speichere das aktuelle Layout mit der Schaltfläche unten.", mute:"Stumm", drag_hint:"Auf ein anderes Gerät ziehen", settings:"Einstellungen", minimize:"In die Taskleiste", autoheal_t:"Auto-Reparatur", autoheal_d:"Stellt dein Layout wieder her, wenn Windows den Ton zurücksetzt", autostart_t:"Autostart", autostart_d:"SoundDeck bei der Anmeldung starten", group_t:"Prozesse gruppieren", group_d:"Mehrprozess-Apps (Spotify, Chrome…) als eine Karte anzeigen", theme_t:"Design", language_t:"Sprache", save_prompt:"Profilname:", profile_default:"Profil" },
-  fr: { default_prefix:"par défaut :", no_default:"aucun périphérique par défaut", set_default:"par défaut", mirror:"dupliquer", badge_default:"défaut", badge_mirror:"miroir", drop_here:"glissez une app ici", profiles:"Profils", save_layout:"Enregistrer la disposition", no_profiles:"Aucun profil. Enregistrez la disposition actuelle avec le bouton ci-dessous.", mute:"Couper le son", drag_hint:"Glisser vers un autre périphérique", settings:"Paramètres", minimize:"Réduire dans la barre", autoheal_t:"Auto-réparation", autoheal_d:"Restaure votre disposition si Windows réinitialise l'audio", autostart_t:"Lancer au démarrage", autostart_d:"Démarrer SoundDeck à la connexion", group_t:"Grouper les processus", group_d:"Afficher les apps multi-processus (Spotify, Chrome…) en une carte", theme_t:"Thème", language_t:"Langue", save_prompt:"Nom du profil :", profile_default:"Profil" },
-  ja: { default_prefix:"既定：", no_default:"既定のデバイスなし", set_default:"既定にする", mirror:"ミラー", badge_default:"既定", badge_mirror:"ミラー", drop_here:"アプリをここにドロップ", profiles:"プロファイル", save_layout:"現在の配置を保存", no_profiles:"プロファイルはまだありません。下のボタンで現在の配置を保存してください。", mute:"ミュート", drag_hint:"別のデバイスへドラッグ", settings:"設定", minimize:"トレイに最小化", autoheal_t:"自動修復", autoheal_d:"Windows が音声をリセットしたら配置を復元します", autostart_t:"ログイン時に起動", autostart_d:"サインイン時に SoundDeck を起動", group_t:"アプリのプロセスをまとめる", group_d:"複数プロセスのアプリ（Spotify、Chrome…）を1枚のカードに表示", theme_t:"テーマ", language_t:"言語", save_prompt:"プロファイル名：", profile_default:"プロファイル" },
+  en: { default_prefix:"default:", no_default:"no default device", set_default:"make default", mirror:"mirror", badge_default:"default", badge_mirror:"mirror", drop_here:"drop an app here", profiles:"Profiles", save_layout:"Save current layout", no_profiles:"No profiles yet. Save the current layout with the button below.", mute:"Mute", drag_hint:"Drag to another device", settings:"Settings", minimize:"Minimize to tray", autoheal_t:"Auto-heal", autoheal_d:"Restores your layout if Windows resets audio", autostart_t:"Launch on login", autostart_d:"Start SoundDeck when you sign in", group_t:"Group app processes", group_d:"Show multi-process apps (Spotify, Chrome…) as one card", theme_t:"Theme", back:"Back to board", language_t:"Language", save_prompt:"Profile name:", profile_default:"Profile" },
+  ru: { default_prefix:"по умолчанию:", no_default:"нет устройства по умолчанию", set_default:"сделать осн.", mirror:"дубль", badge_default:"по умолч.", badge_mirror:"дубль", drop_here:"перетащи приложение сюда", profiles:"Профили", save_layout:"Сохранить текущую раскладку", no_profiles:"Профилей пока нет. Сохрани текущую раскладку кнопкой ниже.", mute:"Заглушить", drag_hint:"Перетащи на другое устройство", settings:"Настройки", minimize:"Свернуть в трей", autoheal_t:"Авто-лечилка", autoheal_d:"Возвращает раскладку, если Windows сбросил звук", autostart_t:"Автозапуск", autostart_d:"Запускать SoundDeck при входе в систему", group_t:"Группировать процессы", group_d:"Показывать многопроцессные приложения (Spotify, Chrome…) одной карточкой", theme_t:"Тема", back:"На доску", language_t:"Язык", save_prompt:"Название профиля:", profile_default:"Профиль" },
+  uk: { default_prefix:"за замовчуванням:", no_default:"немає пристрою за замовчуванням", set_default:"зробити осн.", mirror:"дубль", badge_default:"за замовч.", badge_mirror:"дубль", drop_here:"перетягни застосунок сюди", profiles:"Профілі", save_layout:"Зберегти поточне розкладання", no_profiles:"Профілів поки немає. Збережи поточне розкладання кнопкою нижче.", mute:"Вимкнути звук", drag_hint:"Перетягни на інший пристрій", settings:"Налаштування", minimize:"Згорнути в трей", autoheal_t:"Авто-відновлення", autoheal_d:"Повертає розкладання, якщо Windows скинув звук", autostart_t:"Автозапуск", autostart_d:"Запускати SoundDeck під час входу", group_t:"Групувати процеси", group_d:"Показувати багатопроцесні застосунки (Spotify, Chrome…) однією карткою", theme_t:"Тема", back:"На дошку", language_t:"Мова", save_prompt:"Назва профілю:", profile_default:"Профіль" },
+  zh: { default_prefix:"默认：", no_default:"没有默认设备", set_default:"设为默认", mirror:"镜像", badge_default:"默认", badge_mirror:"镜像", drop_here:"将应用拖到这里", profiles:"配置", save_layout:"保存当前布局", no_profiles:"还没有配置。用下面的按钮保存当前布局。", mute:"静音", drag_hint:"拖到其他设备", settings:"设置", minimize:"最小化到托盘", autoheal_t:"自动修复", autoheal_d:"当 Windows 重置音频时恢复你的布局", autostart_t:"开机启动", autostart_d:"登录时启动 SoundDeck", group_t:"合并应用进程", group_d:"将多进程应用（Spotify、Chrome…）显示为一张卡片", theme_t:"主题", back:"返回主界面", language_t:"语言", save_prompt:"配置名称：", profile_default:"配置" },
+  es: { default_prefix:"predeterminado:", no_default:"sin dispositivo predeterminado", set_default:"predeterminar", mirror:"duplicar", badge_default:"predet.", badge_mirror:"duplicado", drop_here:"arrastra una app aquí", profiles:"Perfiles", save_layout:"Guardar diseño actual", no_profiles:"Aún no hay perfiles. Guarda el diseño actual con el botón de abajo.", mute:"Silenciar", drag_hint:"Arrastra a otro dispositivo", settings:"Ajustes", minimize:"Minimizar a la bandeja", autoheal_t:"Auto-reparación", autoheal_d:"Restaura tu diseño si Windows reinicia el audio", autostart_t:"Iniciar con el sistema", autostart_d:"Abrir SoundDeck al iniciar sesión", group_t:"Agrupar procesos", group_d:"Mostrar apps multiproceso (Spotify, Chrome…) como una tarjeta", theme_t:"Tema", back:"Volver al tablero", language_t:"Idioma", save_prompt:"Nombre del perfil:", profile_default:"Perfil" },
+  de: { default_prefix:"Standard:", no_default:"kein Standardgerät", set_default:"als Standard", mirror:"Spiegeln", badge_default:"Standard", badge_mirror:"Spiegel", drop_here:"App hierher ziehen", profiles:"Profile", save_layout:"Aktuelles Layout speichern", no_profiles:"Noch keine Profile. Speichere das aktuelle Layout mit der Schaltfläche unten.", mute:"Stumm", drag_hint:"Auf ein anderes Gerät ziehen", settings:"Einstellungen", minimize:"In die Taskleiste", autoheal_t:"Auto-Reparatur", autoheal_d:"Stellt dein Layout wieder her, wenn Windows den Ton zurücksetzt", autostart_t:"Autostart", autostart_d:"SoundDeck bei der Anmeldung starten", group_t:"Prozesse gruppieren", group_d:"Mehrprozess-Apps (Spotify, Chrome…) als eine Karte anzeigen", theme_t:"Design", back:"Zurück zum Board", language_t:"Sprache", save_prompt:"Profilname:", profile_default:"Profil" },
+  fr: { default_prefix:"par défaut :", no_default:"aucun périphérique par défaut", set_default:"par défaut", mirror:"dupliquer", badge_default:"défaut", badge_mirror:"miroir", drop_here:"glissez une app ici", profiles:"Profils", save_layout:"Enregistrer la disposition", no_profiles:"Aucun profil. Enregistrez la disposition actuelle avec le bouton ci-dessous.", mute:"Couper le son", drag_hint:"Glisser vers un autre périphérique", settings:"Paramètres", minimize:"Réduire dans la barre", autoheal_t:"Auto-réparation", autoheal_d:"Restaure votre disposition si Windows réinitialise l'audio", autostart_t:"Lancer au démarrage", autostart_d:"Démarrer SoundDeck à la connexion", group_t:"Grouper les processus", group_d:"Afficher les apps multi-processus (Spotify, Chrome…) en une carte", theme_t:"Thème", back:"Retour au tableau", language_t:"Langue", save_prompt:"Nom du profil :", profile_default:"Profil" },
+  ja: { default_prefix:"既定：", no_default:"既定のデバイスなし", set_default:"既定にする", mirror:"ミラー", badge_default:"既定", badge_mirror:"ミラー", drop_here:"アプリをここにドロップ", profiles:"プロファイル", save_layout:"現在の配置を保存", no_profiles:"プロファイルはまだありません。下のボタンで現在の配置を保存してください。", mute:"ミュート", drag_hint:"別のデバイスへドラッグ", settings:"設定", minimize:"トレイに最小化", autoheal_t:"自動修復", autoheal_d:"Windows が音声をリセットしたら配置を復元します", autostart_t:"ログイン時に起動", autostart_d:"サインイン時に SoundDeck を起動", group_t:"アプリのプロセスをまとめる", group_d:"複数プロセスのアプリ（Spotify、Chrome…）を1枚のカードに表示", theme_t:"テーマ", back:"ボードに戻る", language_t:"言語", save_prompt:"プロファイル名：", profile_default:"プロファイル" },
 };
 function currentLang() {
   const s = state.settings && state.settings.language;
@@ -348,45 +350,33 @@ function t(k) {
 function renderSettings() {
   setSwitch(document.getElementById("autohealSwitch"), !!state.settings.autoHeal);
   setSwitch(document.getElementById("autostartSwitch"), !!state.settings.autostart);
-
-  const theme = state.settings.theme || "neu";
-  const cur = THEMES.find(t => t.id === theme) || THEMES[0];
-  document.getElementById("themeCurrent").textContent = cur.name;
-  document.getElementById("themeSw").style.background = cur.sw;
-
-  const menu = document.getElementById("themeDropMenu");
-  menu.innerHTML = "";
-  THEMES.forEach(t => {
-    const o = document.createElement("div");
-    o.className = "theme-opt" + (t.id === theme ? " active" : "");
-    o.setAttribute("role", "option");
-    o.innerHTML = `<span class="sw" style="background:${t.sw}"></span>
-      <span class="theme-opt-name">${t.name}</span>
-      ${t.id === theme ? '<i class="fa-solid fa-check ok"></i>' : ""}`;
-    o.onclick = () => {
-      send({ cmd: "setTheme", value: t.id });
-      menu.hidden = true;
-    };
-    menu.appendChild(o);
-  });
-
-  // grouping toggle
   setSwitch(document.getElementById("groupSwitch"), state.settings.groupApps !== false);
 
-  // language dropdown
+  // theme grid
+  const theme = state.settings.theme || "neu";
+  const tg = document.getElementById("themeGrid");
+  tg.innerHTML = "";
+  THEMES.forEach(th => {
+    const el = document.createElement("button");
+    el.className = "theme-tile" + (th.id === theme ? " active" : "");
+    el.innerHTML = `<span class="sw" style="background:${th.sw}"></span>` +
+      `<span class="tile-name">${th.name}</span>` +
+      (th.id === theme ? '<i class="fa-solid fa-check chk"></i>' : "");
+    el.onclick = () => send({ cmd: "setTheme", value: th.id });
+    tg.appendChild(el);
+  });
+
+  // language grid
   const lang = currentLang();
-  const lcur = LANGS.find(x => x.id === lang) || LANGS[0];
-  document.getElementById("langCurrent").textContent = lcur.name;
-  const lmenu = document.getElementById("langDropMenu");
-  lmenu.innerHTML = "";
+  const lg = document.getElementById("langGrid");
+  lg.innerHTML = "";
   LANGS.forEach(x => {
-    const o = document.createElement("div");
-    o.className = "theme-opt" + (x.id === lang ? " active" : "");
-    o.setAttribute("role", "option");
-    o.innerHTML = `<span class="theme-opt-name">${x.name}</span>` +
-      (x.id === lang ? ' <i class="fa-solid fa-check ok"></i>' : "");
-    o.onclick = () => { send({ cmd: "setLanguage", value: x.id }); lmenu.hidden = true; };
-    lmenu.appendChild(o);
+    const el = document.createElement("button");
+    el.className = "lang-chip" + (x.id === lang ? " active" : "");
+    el.innerHTML = `<span>${x.name}</span>` +
+      (x.id === lang ? ' <i class="fa-solid fa-check chk"></i>' : "");
+    el.onclick = () => send({ cmd: "setLanguage", value: x.id });
+    lg.appendChild(el);
   });
 }
 
@@ -395,22 +385,27 @@ function setSwitch(el, on) { el.classList.toggle("on", on); }
 // ---- wiring ----
 document.getElementById("closeBtn").onclick = () => send({ cmd: "hide" });
 
-const settingsPop = document.getElementById("settingsPop");
 const profilesPop = document.getElementById("profilesPop");
-function closePops() {
-  settingsPop.hidden = true;
-  profilesPop.hidden = true;
-  for (const id of ["themeDropMenu", "langDropMenu"]) {
-    const m = document.getElementById(id);
-    if (m) m.hidden = true;
-  }
+const settingsView = document.getElementById("settingsView");
+let settingsOpen = false;
+
+function closePops() { if (profilesPop) profilesPop.hidden = true; }
+
+function setSettings(open) {
+  settingsOpen = open;
+  settingsView.classList.toggle("open", open);
+  settingsView.setAttribute("aria-hidden", open ? "false" : "true");
+  const btn = document.getElementById("settingsBtn");
+  btn.innerHTML = open ? '<i class="fa-solid fa-house"></i>' : '<i class="fa-solid fa-gear"></i>';
+  btn.title = open ? t("back") : t("settings");
+  const pill = document.getElementById("profilesBtn");
+  if (pill) pill.style.visibility = open ? "hidden" : "";
+  if (open) closePops();
 }
 
 document.getElementById("settingsBtn").onclick = (e) => {
   e.stopPropagation();
-  const show = settingsPop.hidden;
-  closePops();
-  settingsPop.hidden = !show;
+  setSettings(!settingsOpen);
 };
 document.getElementById("profilesBtn").onclick = (e) => {
   e.stopPropagation();
@@ -419,7 +414,7 @@ document.getElementById("profilesBtn").onclick = (e) => {
   profilesPop.hidden = !show;
 };
 document.addEventListener("click", (e) => {
-  if (e.target.closest("#settingsBtn, #profilesBtn, .settings-pop")) return;
+  if (e.target.closest("#profilesBtn, #profilesPop")) return;
   closePops();
 });
 
@@ -427,26 +422,8 @@ document.getElementById("autohealSwitch").onclick = () =>
   send({ cmd: "setAutoHeal", value: !state.settings.autoHeal });
 document.getElementById("autostartSwitch").onclick = () =>
   send({ cmd: "setAutostart", value: !state.settings.autostart });
-
 document.getElementById("groupSwitch").onclick = () =>
   send({ cmd: "setGroupApps", value: state.settings.groupApps === false });
-
-const themeMenu = document.getElementById("themeDropMenu");
-const langMenu = document.getElementById("langDropMenu");
-document.getElementById("themeDropBtn").onclick = (e) => {
-  e.stopPropagation();
-  langMenu.hidden = true;
-  themeMenu.hidden = !themeMenu.hidden;
-};
-document.getElementById("langDropBtn").onclick = (e) => {
-  e.stopPropagation();
-  themeMenu.hidden = true;
-  langMenu.hidden = !langMenu.hidden;
-};
-document.addEventListener("click", (e) => {
-  if (!e.target.closest("#themeDrop")) themeMenu.hidden = true;
-  if (!e.target.closest("#langDrop")) langMenu.hidden = true;
-});
 
 document.getElementById("saveProfileBtn").onclick = () => {
   const name = window.prompt(t("save_prompt"), t("profile_default"));
