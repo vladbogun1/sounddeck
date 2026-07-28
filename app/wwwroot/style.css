@@ -407,9 +407,13 @@ html, body {
 .card:hover { box-shadow: var(--shadow); }
 .card.dragging { opacity: 0.4; }
 .card.expanded { box-shadow: var(--shadow); }
-.grip { color: var(--faint); font-size: 12px; cursor: grab; letter-spacing: -2px; user-select: none; }
+.grip, .grip-off {
+  flex: 0 0 12px; width: 12px;
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.grip { color: var(--faint); font-size: 12px; cursor: grab; user-select: none; }
 .grip:active { cursor: grabbing; }
-.grip-off { display: inline-block; width: 10px; cursor: default; }
+.grip-off { cursor: default; }
 
 .mirror-card { border-color: var(--warn-border); }
 .mirror-card .app-hint {
