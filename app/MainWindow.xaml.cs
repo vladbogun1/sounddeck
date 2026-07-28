@@ -133,6 +133,9 @@ public partial class MainWindow : Window
                 case "setMirror":
                     _controller.SetMirror(root.TryGetProperty("deviceId", out var d) ? d.GetString() : null);
                     break;
+                case "setMirrorVolume":
+                    _controller.SetMirrorVolume(root.GetProperty("value").GetInt32());
+                    break;
                 case "hide": Hide(); break;
             }
             // State-changing commands raise StateChanged, which pushes once.

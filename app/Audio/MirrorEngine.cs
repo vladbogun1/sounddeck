@@ -17,6 +17,13 @@ public class MirrorEngine : IDisposable
     public string? TargetDeviceId { get; private set; }
     public string? LastError { get; private set; }
 
+    // Loudness of the mirrored stream on the second device (0..1).
+    public float Volume
+    {
+        get => _output?.Volume ?? 1f;
+        set { try { if (_output != null) _output.Volume = Math.Clamp(value, 0f, 1f); } catch { } }
+    }
+
     public bool Start(MMDevice source, MMDevice target)
     {
         Stop();

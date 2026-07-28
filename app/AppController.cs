@@ -42,8 +42,24 @@ public class AppController : IDisposable
             // falls into the default column rather than vanishing.
             if (!string.IsNullOrEmpty(s.OutputDeviceId) && !deviceIds.Contains(s.OutputDeviceId))
                 s.OutputDeviceId = "";
-            // Mirror is device-level, not per-app — the target column shows the badge.
         }
+
+        // Mirror shows up as its own card on the target device — with the app icon
+        // and a volume slider that controls how loud the duplicated stream is.
+        if (_mirror.Active && !string.IsNullOrEmpty(_mirror.TargetDeviceId)
+            && deviceIds.Contains(_mirror.TargetDeviceId))
+        {
+            sessions.Add(new SessionDto
+            {
+                Pid = uint.MaxValue,
+                Name = "SoundDeck",
+                IconB64 = AppIcon(),
+                Volume = (int)Math.Round(_mirror.Volume * 100),
+                OutputDeviceId = _mirror.TargetDeviceId,
+                IsMirror = true,
+            });
+        }
+
         return new StateDto
         {
             Devices = devices,
@@ -64,6 +80,31 @@ public class AppController : IDisposable
     public void SetSessionMute(uint pid, bool m) { _audio.SetSessionMute(pid, m); StateChanged?.Invoke(); }
     public void SetDeviceVolume(string id, int v) => _audio.SetDeviceVolume(id, v);
     public void SetDeviceMute(string id, bool m) { _audio.SetDeviceMute(id, m); StateChanged?.Invoke(); }
+
+    public void SetMirrorVolume(int percent)
+    {
+        float v = Math.Clamp(percent, 0, 100) / 100f;
+        _mirror.Volume = v;
+        _store.Settings.MirrorVolume = v;
+        _store.SaveSettings();
+    }
+
+    // App's own icon (from the exe) as a data URI, for the mirror card. Cached.
+    static string? _appIcon;
+    static string AppIcon()
+    {
+        if (_appIcon != null) return _appIcon;
+        try
+        {
+            using var ico = System.Drawing.Icon.ExtractAssociatedIcon(Environment.ProcessPath!);
+            using var bmp = ico!.ToBitmap();
+            using var ms = new System.IO.MemoryStream();
+            bmp.Save(ms, System.Drawing.Imaging.ImageFormat.Png);
+            _appIcon = "data:image/png;base64," + Convert.ToBase64String(ms.ToArray());
+        }
+        catch { _appIcon = ""; }
+        return _appIcon;
+    }
 
     // ---- Profiles -------------------------------------------------------
 
@@ -202,7 +243,10 @@ public class AppController : IDisposable
         var target = _audio.GetDevice(secondaryDeviceId);
         var source = _audio.DefaultDeviceId is string d ? _audio.GetDevice(d) : null;
         if (target != null && source != null && target.ID != source.ID)
-            _mirror.Start(source, target);
+        {
+            if (_mirror.Start(source, target))
+                _mirror.Volume = (float)_store.Settings.MirrorVolume;
+        }
     }
 
     public void Dispose()

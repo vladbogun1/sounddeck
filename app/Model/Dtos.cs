@@ -20,6 +20,7 @@ public class SessionDto
     public bool Muted { get; set; }
     public string OutputDeviceId { get; set; } = "";  // "" = follows default
     public bool Mirrored { get; set; }
+    public bool IsMirror { get; set; }                 // synthetic card for the mirror stream
 }
 
 public class ProfileDto
@@ -39,6 +40,7 @@ public class SettingsDto
     public string Theme { get; set; } = "neu";            // "neu" | "glass" | ...
     public bool GroupApps { get; set; } = true;           // merge multi-process apps into one card
     public string Language { get; set; } = "";            // "" = auto (system), else e.g. "en","ru"
+    public double MirrorVolume { get; set; } = 1.0;       // loudness of the mirrored stream (0..1)
 }
 
 public class StateDto

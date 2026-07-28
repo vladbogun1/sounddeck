@@ -137,8 +137,12 @@ function renderBoard() {
 }
 
 function buildCard(s) {
+  const isMirror = !!s.isMirror;
+  // System sounds (pid 0) and the mirror card can't be routed → not draggable.
+  const canDrag = s.pid !== 0 && !isMirror;
+
   const card = document.createElement("div");
-  card.className = "card" + (expanded.has(s.pid) ? " expanded" : "");
+  card.className = "card" + (expanded.has(s.pid) ? " expanded" : "") + (isMirror ? " mirror-card" : "");
   card.draggable = false;   // enabled only when the grab starts off the slider
   card.dataset.pid = s.pid;
 
@@ -146,18 +150,26 @@ function buildCard(s) {
     ? `<img src="${s.iconB64}" alt="" />`
     : escapeHtml((s.name || "?").charAt(0).toUpperCase());
 
+  const gripHtml = canDrag
+    ? `<span class="grip" title="${t("drag_hint")}"><i class="fa-solid fa-grip-vertical"></i></span>`
+    : `<span class="grip grip-off"></span>`;
+  const muteHtml = isMirror ? ""
+    : `<button class="mute-btn ${s.muted ? "muted" : ""}" title="${t("mute")}"><i class="fa-solid ${s.muted ? "fa-volume-xmark" : "fa-volume-high"}"></i></button>`;
+  const hint = isMirror ? t("badge_mirror") : (s.volume + "%");
+
   const row = document.createElement("div");
   row.className = "card-row";
   row.innerHTML = `
-    <span class="grip" title="${t("drag_hint")}"><i class="fa-solid fa-grip-vertical"></i></span>
+    ${gripHtml}
     <div class="app-ico">${ico}</div>
     <div class="app-meta">
       <div class="app-name">${escapeHtml(s.name)}</div>
-      <div class="app-hint">${s.volume}%</div>
+      <div class="app-hint">${hint}</div>
     </div>
-    <button class="mute-btn ${s.muted ? "muted" : ""}" title="${t("mute")}"><i class="fa-solid ${s.muted ? "fa-volume-xmark" : "fa-volume-high"}"></i></button>
+    ${muteHtml}
   `;
-  row.querySelector(".mute-btn").onclick = (e) => {
+  const muteBtn = row.querySelector(".mute-btn");
+  if (muteBtn) muteBtn.onclick = (e) => {
     e.stopPropagation();
     send({ cmd: "setSessionMute", pid: s.pid, value: !s.muted });
   };
@@ -170,7 +182,8 @@ function buildCard(s) {
   const wrap = document.createElement("div");
   wrap.className = "slider-wrap";
   const slider = buildSlider(s.volume, (v) => {
-    send({ cmd: "setSessionVolume", pid: s.pid, value: v });
+    if (isMirror) send({ cmd: "setMirrorVolume", value: v });
+    else send({ cmd: "setSessionVolume", pid: s.pid, value: v });
   });
   const val = document.createElement("span");
   val.className = "slider-val";
@@ -180,25 +193,27 @@ function buildCard(s) {
   wrap.appendChild(val);
   card.appendChild(wrap);
 
-  // Enable native drag only when the grab starts on the card body (row),
-  // never on the volume slider or mute button.
-  row.addEventListener("pointerdown", (e) => {
-    card.draggable = !e.target.closest(".mute-btn");
-  });
-  wrap.addEventListener("pointerdown", () => { card.draggable = false; }, true);
+  if (canDrag) {
+    // Enable native drag only when the grab starts on the card body (row),
+    // never on the volume slider or mute button.
+    row.addEventListener("pointerdown", (e) => {
+      card.draggable = !e.target.closest(".mute-btn");
+    });
+    wrap.addEventListener("pointerdown", () => { card.draggable = false; }, true);
 
-  card.addEventListener("dragstart", (e) => {
-    if (!card.draggable) { e.preventDefault(); return; }
-    dragPid = s.pid;
-    card.classList.add("dragging");
-    e.dataTransfer.effectAllowed = "move";
-    e.dataTransfer.setData("text/plain", String(s.pid));
-  });
-  card.addEventListener("dragend", () => {
-    dragPid = null;
-    card.draggable = false;
-    card.classList.remove("dragging");
-  });
+    card.addEventListener("dragstart", (e) => {
+      if (!card.draggable) { e.preventDefault(); return; }
+      dragPid = s.pid;
+      card.classList.add("dragging");
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/plain", String(s.pid));
+    });
+    card.addEventListener("dragend", () => {
+      dragPid = null;
+      card.draggable = false;
+      card.classList.remove("dragging");
+    });
+  }
 
   return card;
 }
@@ -449,14 +464,16 @@ if (!bridge) {
       { id: "tv", name: "LED TV (NVIDIA High Definition Audio)", volume: 100, muted: false, isDefault: false, bus: "HDMI" },
     ],
     sessions: [
-      { pid: 1, name: "Microsoft Edge", exe: "msedge.exe", iconB64: "", volume: 99, muted: false, outputDeviceId: "tv", mirrored: false },
-      { pid: 2, name: "Google Chrome", exe: "chrome.exe", iconB64: "", volume: 100, muted: false, outputDeviceId: "", mirrored: false },
-      { pid: 3, name: "Steam", exe: "steam.exe", iconB64: "", volume: 100, muted: false, outputDeviceId: "", mirrored: false },
-      { pid: 4, name: "Telegram Desktop", exe: "telegram.exe", iconB64: "", volume: 100, muted: false, outputDeviceId: "", mirrored: false },
+      { pid: 0, name: "Системные звуки", exe: "", iconB64: "", volume: 100, muted: false, outputDeviceId: "" },
+      { pid: 1, name: "Microsoft Edge", exe: "msedge.exe", iconB64: "", volume: 99, muted: false, outputDeviceId: "" },
+      { pid: 2, name: "Google Chrome", exe: "chrome.exe", iconB64: "", volume: 100, muted: false, outputDeviceId: "" },
+      { pid: 3, name: "Steam", exe: "steam.exe", iconB64: "", volume: 100, muted: false, outputDeviceId: "" },
+      { pid: 4294967295, name: "SoundDeck", exe: "", iconB64: "", volume: 80, muted: false, outputDeviceId: "tv", isMirror: true },
     ],
     profiles: [{ id: "p1", name: "Default" }],
     settings: { autoHeal: true, autostart: false, theme: "neu", activeProfileId: "p1", groupApps: true, language: "" },
-    mirrorActive: false,
+    mirrorActive: true,
+    mirrorTargetDeviceId: "tv",
   };
   render();
 }

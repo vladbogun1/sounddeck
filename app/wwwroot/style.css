@@ -409,6 +409,13 @@ html, body {
 .card.expanded { box-shadow: var(--shadow); }
 .grip { color: var(--faint); font-size: 12px; cursor: grab; letter-spacing: -2px; user-select: none; }
 .grip:active { cursor: grabbing; }
+.grip-off { display: inline-block; width: 10px; cursor: default; }
+
+.mirror-card { border-color: var(--warn-border); }
+.mirror-card .app-hint {
+  color: var(--warn-text); font-weight: 500;
+  text-transform: uppercase; letter-spacing: 0.4px; font-size: 9.5px;
+}
 
 .card-row { display: flex; align-items: center; gap: 8px; }
 .app-ico {
