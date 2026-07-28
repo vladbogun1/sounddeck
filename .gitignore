@@ -1,0 +1,14 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+publish/
+*.user
+
+# Generated at build time
+app/webassets.zip
+app/boot.log
+
+# Tooling / editors
+.vs/
+.playwright-mcp/
+*.suo

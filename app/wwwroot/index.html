@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru" data-theme="neu">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SoundDeck</title>
+  <link rel="stylesheet" href="fa/css/all.min.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-badge"><i class="fa-solid fa-volume-high"></i></div>
+        <div>
+          <div class="brand-title">SoundDeck</div>
+          <div class="brand-sub" id="healthLine">управление источниками звука</div>
+        </div>
+      </div>
+      <div class="topactions">
+        <button class="pill" id="profilesBtn" title="Профили">
+          <i class="fa-solid fa-layer-group"></i>
+          <span id="activeProfileName">Профили</span>
+          <i class="fa-solid fa-chevron-down chev"></i>
+        </button>
+        <button class="icon-btn" id="settingsBtn" title="Настройки" aria-label="Настройки"><i class="fa-solid fa-gear"></i></button>
+        <button class="icon-btn" id="closeBtn" title="Свернуть в трей" aria-label="Свернуть"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="settings-pop profiles-pop" id="profilesPop" hidden>
+        <div class="pop-list" id="profilesList"></div>
+        <button class="ghost accent full" id="saveProfileBtn"><i class="fa-solid fa-plus"></i> Сохранить текущую раскладку</button>
+      </div>
+
+      <div class="settings-pop" id="settingsPop" hidden>
+        <div class="set-row">
+          <div>
+            <div class="set-title">Авто-лечилка</div>
+            <div class="set-desc">Возвращает раскладку, если Windows сбросил звук</div>
+          </div>
+          <button class="switch" id="autohealSwitch" role="switch"><span></span></button>
+        </div>
+        <div class="set-row">
+          <div>
+            <div class="set-title">Автозапуск</div>
+            <div class="set-desc">Запускать SoundDeck при входе в систему</div>
+          </div>
+          <button class="switch" id="autostartSwitch" role="switch"><span></span></button>
+        </div>
+        <div class="set-row col">
+          <div class="set-title">Тема</div>
+          <div class="theme-drop" id="themeDrop">
+            <button class="theme-drop-btn" id="themeDropBtn" aria-haspopup="listbox">
+              <span class="sw" id="themeSw"></span>
+              <span class="theme-cur" id="themeCurrent">Необрутализм</span>
+              <i class="fa-solid fa-chevron-down chev"></i>
+            </button>
+            <div class="theme-drop-menu" id="themeDropMenu" role="listbox" hidden></div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="board" id="board"></main>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>

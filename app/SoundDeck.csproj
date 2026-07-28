@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>appicon.ico</ApplicationIcon>
+    <AssemblyName>SoundDeck</AssemblyName>
+    <RootNamespace>SoundDeck</RootNamespace>
+
+    <!-- Identity / version metadata (also helps reduce AV false positives) -->
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <Company>SoundDeck</Company>
+    <Product>SoundDeck</Product>
+    <Authors>vladbogun1</Authors>
+    <Description>Kanban-style audio source router for Windows.</Description>
+    <Copyright>Copyright © 2026</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="NAudio" Version="2.2.1" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.2792.45" />
+    <PackageReference Include="System.Drawing.Common" Version="8.0.7" />
+  </ItemGroup>
+
+  <!-- Debug: loose web assets next to the exe for a fast edit/run loop -->
+  <ItemGroup Condition="'$(Configuration)' == 'Debug'">
+    <Content Include="wwwroot\**\*">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="appicon.ico">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <!-- Release: bundle the web assets into the exe as a single embedded zip -->
+  <Target Name="ZipWebAssets" BeforeTargets="BeforeBuild" Condition="'$(Configuration)' == 'Release'">
+    <Delete Files="webassets.zip" />
+    <ZipDirectory SourceDirectory="wwwroot" DestinationFile="webassets.zip" />
+  </Target>
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <EmbeddedResource Include="webassets.zip">
+      <LogicalName>SoundDeck.webassets.zip</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+</Project>
