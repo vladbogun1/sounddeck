@@ -18,6 +18,7 @@
         </div>
       </div>
       <div class="topactions">
+        <button class="pill update-pill" id="updateBtn" hidden></button>
         <button class="pill" id="profilesBtn" title="Профили">
           <i class="fa-solid fa-layer-group"></i>
           <span id="activeProfileName">Профили</span>
@@ -36,6 +37,7 @@
 
     <div class="body">
       <main class="board" id="board"></main>
+      <div class="dock" id="dock"></div>
 
       <section class="settings-view" id="settingsView" aria-hidden="true">
         <div class="settings-scroll">
@@ -65,6 +67,30 @@
             </div>
           </div>
 
+          <div class="set-section-label" id="t_devices"></div>
+          <div class="set-hint" id="d_devices"></div>
+          <div class="set-card" id="devicesList"></div>
+
+          <div class="set-section-label" id="t_updates"></div>
+          <div class="set-card">
+            <div class="set-row">
+              <div>
+                <div class="set-title" id="t_autoupdate"></div>
+                <div class="set-desc" id="d_autoupdate"></div>
+              </div>
+              <button class="switch" id="autoupdateSwitch" role="switch"><span></span></button>
+            </div>
+            <div class="set-row upd-row">
+              <div class="upd-info">
+                <div class="set-title" id="updVersion"></div>
+                <div class="set-desc" id="updStatus"></div>
+                <div class="upd-progress" id="updProgress" hidden><div></div></div>
+                <div class="upd-error" id="updError" hidden></div>
+              </div>
+              <div class="upd-actions" id="updActions"></div>
+            </div>
+          </div>
+
           <div class="set-section-label" id="t_theme"></div>
           <div class="theme-grid" id="themeGrid"></div>
 
@@ -77,5 +103,9 @@
 
   <script src="i18n.js"></script>
   <script src="app.js"></script>
+  <script src="panels.js"></script>
+  <script src="layout.js"></script>
+  <script src="drag.js"></script>
+  <script>boot();</script>
 </body>
 </html>

@@ -203,7 +203,7 @@ public partial class MainWindow : Window
     void FitTo(double w, double h)
     {
         var wa = SystemParameters.WorkArea;
-        w = Math.Clamp(Math.Round(w), 520, wa.Width - 24);
+        w = Math.Clamp(Math.Round(w), 380, wa.Width - 24);
         h = Math.Clamp(Math.Round(h), 360, wa.Height - 24);
         if (Math.Abs(w - Width) < 2 && Math.Abs(h - Height) < 2) return;
         Width = w; Height = h;

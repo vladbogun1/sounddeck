@@ -4,7 +4,6 @@ const bridge = window.chrome && window.chrome.webview;
 let state = { devices: [], sessions: [], profiles: [], settings: {}, mirrorActive: false };
 const expanded = new Set();      // pids with volume slider open
 let interacting = false;         // true while dragging a slider (pause re-render)
-let dragPid = null;
 
 function send(msg) { if (bridge) bridge.postMessage(msg); }
 
@@ -32,11 +31,16 @@ function deviceIcon(bus) {
 }
 
 // ---- render ----
+let rendered = false;
 function render() {
   applyTheme();
   applyI18n();
   renderHealth();
+  const prev = Motion.capture();
   renderBoard();
+  Layout.apply();
+  Motion.play(prev, !rendered);
+  rendered = true;
   renderProfiles();
   renderSettings();
 }
@@ -49,6 +53,7 @@ function applyI18n() {
   setText("t_autoheal", t("autoheal_t"));  setText("d_autoheal", t("autoheal_d"));
   setText("t_autostart", t("autostart_t")); setText("d_autostart", t("autostart_d"));
   setText("t_group", t("group_t"));        setText("d_group", t("group_d"));
+  setText("t_devices", t("devices_t"));    setText("d_devices", t("devices_d"));
   setText("t_theme", t("theme_t"));         setText("t_lang", t("language_t"));
   setText("saveProfileLbl", t("save_layout"));
   setText("settingsTitle", t("settings"));
@@ -76,7 +81,7 @@ function renderBoard() {
   const board = document.getElementById("board");
   board.innerHTML = "";
 
-  state.devices.forEach(dev => {
+  visibleDevices().forEach(dev => {
     const col = document.createElement("div");
     col.className = "column" + (dev.isDefault ? " default" : "");
     col.dataset.deviceId = dev.id;
@@ -91,7 +96,7 @@ function renderBoard() {
         ${dev.isDefault ? `<span class="badge">${t("badge_default")}</span>` : ""}
         ${isMirrorTarget ? `<span class="badge mirror">${t("badge_mirror")}</span>` : ""}
       </div>
-      <div class="col-sub">${dev.volume}%${dev.muted ? " · выкл" : ""}</div>
+      <div class="col-sub">${dev.volume}%${dev.muted ? " · " + t("muted_short") : ""}</div>
       <div class="col-vol"></div>
       <div class="col-tools"></div>
       <div class="cards"></div>
@@ -128,22 +133,20 @@ function renderBoard() {
     if (list.length === 0) {
       cards.innerHTML = `<div class="empty">${t("drop_here")}</div>`;
     } else {
-      list.forEach(s => cards.appendChild(buildCard(s)));
+      list.forEach(s => cards.appendChild(buildCard(s, dev.id)));
     }
 
-    setupDrop(col, dev);
     board.appendChild(col);
   });
 }
 
-function buildCard(s) {
+function buildCard(s, deviceId) {
   const isMirror = !!s.isMirror;
   // System sounds (pid 0) and the mirror card can't be routed → not draggable.
   const canDrag = s.pid !== 0 && !isMirror;
 
   const card = document.createElement("div");
   card.className = "card" + (expanded.has(s.pid) ? " expanded" : "") + (isMirror ? " mirror-card" : "");
-  card.draggable = false;   // enabled only when the grab starts off the slider
   card.dataset.pid = s.pid;
 
   const ico = s.iconB64
@@ -163,7 +166,7 @@ function buildCard(s) {
     ${gripHtml}
     <div class="app-ico">${ico}</div>
     <div class="app-meta">
-      <div class="app-name">${escapeHtml(s.name)}</div>
+      <div class="app-name">${escapeHtml(s.pid === 0 ? t("system_sounds") : s.name)}</div>
       <div class="app-hint">${hint}</div>
     </div>
     ${muteHtml}
@@ -174,6 +177,7 @@ function buildCard(s) {
     send({ cmd: "setSessionMute", pid: s.pid, value: !s.muted });
   };
   row.onclick = () => {
+    if (Drag.consumeClick()) return;
     if (expanded.has(s.pid)) expanded.delete(s.pid); else expanded.add(s.pid);
     card.classList.toggle("expanded");
   };
@@ -193,41 +197,9 @@ function buildCard(s) {
   wrap.appendChild(val);
   card.appendChild(wrap);
 
-  if (canDrag) {
-    // Enable native drag only when the grab starts on the card body (row),
-    // never on the volume slider or mute button.
-    row.addEventListener("pointerdown", (e) => {
-      card.draggable = !e.target.closest(".mute-btn");
-    });
-    wrap.addEventListener("pointerdown", () => { card.draggable = false; }, true);
-
-    card.addEventListener("dragstart", (e) => {
-      if (!card.draggable) { e.preventDefault(); return; }
-      dragPid = s.pid;
-      card.classList.add("dragging");
-      e.dataTransfer.effectAllowed = "move";
-      e.dataTransfer.setData("text/plain", String(s.pid));
-    });
-    card.addEventListener("dragend", () => {
-      dragPid = null;
-      card.draggable = false;
-      card.classList.remove("dragging");
-    });
-  }
+  if (canDrag) Drag.attach(card, row, s, deviceId);
 
   return card;
-}
-
-function setupDrop(col, dev) {
-  col.addEventListener("dragover", (e) => { e.preventDefault(); col.classList.add("drop"); });
-  col.addEventListener("dragleave", () => col.classList.remove("drop"));
-  col.addEventListener("drop", (e) => {
-    e.preventDefault();
-    col.classList.remove("drop");
-    const pid = dragPid || parseInt(e.dataTransfer.getData("text/plain"), 10);
-    if (!pid) return;
-    send({ cmd: "route", pid: pid, deviceId: dev.isDefault ? "" : dev.id });
-  });
 }
 
 // ---- custom slider with a draggable dot ----
@@ -332,6 +304,8 @@ const THEMES = [
 
 
 function renderSettings() {
+  renderDevicesSettings();
+  renderUpdates();
   setSwitch(document.getElementById("autohealSwitch"), !!state.settings.autoHeal);
   setSwitch(document.getElementById("autostartSwitch"), !!state.settings.autostart);
   setSwitch(document.getElementById("groupSwitch"), state.settings.groupApps !== false);
@@ -421,28 +395,37 @@ function escapeHtml(s) {
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 }
 
-send({ cmd: "getState" });
+// Called from index.html once every module is loaded.
+function boot() {
+  send({ cmd: "getState" });
+  if (!bridge) { state = mockState(); render(); }
+}
 
 // Dev mock: when opened outside the app (no C# bridge), render sample data so the
 // board can be inspected/tested in a plain browser.
-if (!bridge) {
-  state = {
+function mockState() {
+  return {
     type: "state",
     devices: [
-      { id: "hp", name: "Наушники (2- FIFINE 683 Microphone)", volume: 74, muted: false, isDefault: true, bus: "USB" },
-      { id: "tv", name: "LED TV (NVIDIA High Definition Audio)", volume: 100, muted: false, isDefault: false, bus: "HDMI" },
+      { id: "hp", name: "Наушники (3- FIFINE 683 Microphone)", volume: 100, muted: false, isDefault: true, bus: "USB" },
+      { id: "tv", name: "LED TV (NVIDIA High Definition Audio)", volume: 77, muted: false, isDefault: false, bus: "HDMI" },
+      { id: "sp", name: "Динамики (Realtek(R) Audio)", volume: 98, muted: false, isDefault: false, bus: "" },
+      { id: "dp", name: "DELL U2723QE (NVIDIA High Definition Audio)", volume: 50, muted: false, isDefault: false, bus: "HDMI" },
+      { id: "vb", name: "CABLE Input (VB-Audio Virtual Cable)", volume: 100, muted: false, isDefault: false, bus: "" },
     ],
     sessions: [
-      { pid: 0, name: "Системные звуки", exe: "", iconB64: "", volume: 100, muted: false, outputDeviceId: "" },
-      { pid: 1, name: "Microsoft Edge", exe: "msedge.exe", iconB64: "", volume: 99, muted: false, outputDeviceId: "" },
+      { pid: 0, name: "System", exe: "", iconB64: "", volume: 100, muted: false, outputDeviceId: "" },
       { pid: 2, name: "Google Chrome", exe: "chrome.exe", iconB64: "", volume: 100, muted: false, outputDeviceId: "" },
-      { pid: 3, name: "Steam", exe: "steam.exe", iconB64: "", volume: 100, muted: false, outputDeviceId: "" },
+      { pid: 3, name: "nvcontainer", exe: "nvcontainer.exe", iconB64: "", volume: 100, muted: false, outputDeviceId: "" },
+      { pid: 4, name: "Spotify", exe: "spotify.exe", iconB64: "", volume: 80, muted: false, outputDeviceId: "sp" },
       { pid: 4294967295, name: "SoundDeck", exe: "", iconB64: "", volume: 80, muted: false, outputDeviceId: "tv", isMirror: true },
     ],
     profiles: [{ id: "p1", name: "Default" }],
-    settings: { autoHeal: true, autostart: false, theme: "neu", activeProfileId: "p1", groupApps: true, language: "" },
+    settings: { autoHeal: true, autostart: false, theme: "neu", activeProfileId: "p1", groupApps: true, language: "",
+                autoUpdate: true, hiddenDeviceIds: ["vb"] },
     mirrorActive: true,
     mirrorTargetDeviceId: "tv",
+    update: { status: "Available", currentVersion: "1.4.0", latestVersion: "1.5.0", canInstall: true, progress: 0,
+              releaseUrl: "https://github.com/vladbogun1/sounddeck/releases/tag/v1.5.0" },
   };
-  render();
 }
