@@ -37,6 +37,9 @@ SoundDeck lebt in der Taskleiste und verwandelt Windows-Audio in ein **Kanban-Bo
 - 🌍 **Mehrsprachig** — folgt standardmäßig der Systemsprache; änderbar in den Einstellungen.
 - 🧩 **Intelligente Gruppierung** — Mehrprozess-Apps (Spotify, Chrome, Discord) erscheinen als eine Karte und werden zusammen geroutet (in den Einstellungen abschaltbar).
 - 🖱️ **Tray-Umschalter** — Klick zum Öffnen, erneuter Klick zum Ausblenden.
+- 🔄 **Installiert und aktualisiert sich selbst** — einmal von irgendwo starten; die App zieht nach `%LocalAppData%\Programs\SoundDeck` um und aktualisiert sich danach direkt aus den GitHub-Releases.
+- 🙈 **Geräte ausblenden**, die du nie anfasst (virtuelle Kabel, Monitore) — Einstellungen → Geräte.
+- 📐 **Passt sich deinen Geräten an** — das Fenster zeigt alle Geräte nebeneinander (auf kleinen Bildschirmen in Zeilen umbrochen); Karten lassen sich überallhin ziehen, für nicht sichtbare Spalten erscheint eine Ablageleiste.
 
 ## Designs
 
@@ -63,9 +66,13 @@ Ebenfalls enthalten: Neubrutalism (Standard), Dark glass, Material, Paper, Solar
 
 ## Installation
 
-1. Lade **`SoundDeck.exe`** aus dem [neuesten Release](../../releases/latest). Es ist eine einzelne portable Datei (self-contained .NET 8) — keine Installation, kein .NET nötig.
+1. Lade **`SoundDeck.exe`** aus dem [neuesten Release](../../releases/latest) (self-contained .NET 8 — kein .NET nötig).
 2. Stelle sicher, dass die **Microsoft Edge WebView2 Runtime** vorhanden ist (auf aktuellen Windows 10/11 vorinstalliert).
-3. Starte sie — SoundDeck läuft in der Taskleiste (Lautsprecher-Symbol). **Linksklick** auf das Symbol öffnet das Board.
+3. Starte sie einmal, egal wo sie liegt. SoundDeck **installiert sich selbst** nach `%LocalAppData%\Programs\SoundDeck` (ohne Adminrechte), legt eine Startmenü-Verknüpfung und einen Eintrag unter *Apps & Features* an (dort deinstallieren), verlegt den Autostart auf den neuen Pfad und startet von dort neu. Die heruntergeladene Datei kann danach gelöscht werden.
+4. **Updates kommen automatisch:** alle 6 Stunden prüft die App die GitHub-Releases, lädt die neue Exe, prüft sie (Größe, SHA-256, dasselbe Signaturzertifikat) und tauscht sie aus, während das Fenster geschlossen ist. Abschalten oder manuell aktualisieren unter Einstellungen → Updates.
+
+Lieber eine portable Kopie? Mit `--portable` starten oder eine leere Datei namens `portable` neben die Exe legen.
+Ein **Linksklick** auf das Tray-Symbol (Lautsprecher) öffnet das Board.
 
 > **SmartScreen-Hinweis.** Die Release-Exe ist **selbstsigniert**, nicht von einer vertrauenswürdigen CA — Windows SmartScreen kann daher warnen: **Weitere Informationen → Trotzdem ausführen**. Zum Prüfen/Vertrauen kannst du `SoundDeck-PublicCert.cer` (im Release enthalten) importieren. Ein vertrauenswürdiges kommerzielles Code-Signing-Zertifikat würde die Warnung vollständig entfernen.
 
@@ -90,10 +97,6 @@ dotnet publish -c Release -r win-x64 --self-contained true ^
   -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=false ^
   -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 ```
-
-## Installer (optional)
-
-Ein [Inno-Setup](https://jrsoftware.org/isinfo.php)-Skript liegt unter [`installer/SoundDeck.iss`](installer/SoundDeck.iss). Baue es mit Inno Setup 6 (`ISCC.exe`) zu einer `setup.exe` mit Startmenü-Verknüpfung und Deinstaller.
 
 ## Einschränkungen
 

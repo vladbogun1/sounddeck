@@ -37,6 +37,9 @@ SoundDeck はシステムトレイに常駐し、Windows の音声を**かんば
 - 🌍 **多言語** — 既定はシステム言語、設定で変更可。
 - 🧩 **スマートまとめ** — 複数プロセスのアプリ（Spotify、Chrome、Discord）を 1 枚のカードにまとめて一緒にルーティング（設定でオフ可）。
 - 🖱️ **トレイでトグル** — クリックで開き、もう一度で隠す。
+- 🔄 **自動インストール・自動更新** — どこからでも exe を一度起動すれば `%LocalAppData%\Programs\SoundDeck` に移動し、以後は GitHub のリリースからその場で更新されます。
+- 🙈 **使わないデバイスを非表示**（仮想ケーブル、モニターなど）— 設定 → デバイス。
+- 📐 **デバイス数に合わせたウィンドウ** — すべてのデバイスを横に並べて表示（小さな画面では折り返し）。カードはどこへでもドラッグでき、画面外の列にはドロップ用のドックが表示されます。
 
 ## テーマ
 
@@ -63,9 +66,13 @@ SoundDeck はシステムトレイに常駐し、Windows の音声を**かんば
 
 ## インストール
 
-1. [最新リリース](../../releases/latest) から **`SoundDeck.exe`** をダウンロード。単一のポータブルファイル（self-contained .NET 8）で、インストール不要・.NET も不要です。
-2. **Microsoft Edge WebView2 ランタイム**があることを確認（最近の Windows 10/11 にはプリインストール）。
-3. 実行すると SoundDeck がトレイ（スピーカーアイコン）に常駐します。アイコンを**左クリック**でボードを開きます。
+1. [最新リリース](../../releases/latest)から **`SoundDeck.exe`** をダウンロードします（自己完結型 .NET 8 — .NET のインストール不要）。
+2. **Microsoft Edge WebView2 Runtime** があることを確認します（最新の Windows 10/11 にはプリインストール済み）。
+3. 置いた場所から一度起動します。SoundDeck は `%LocalAppData%\Programs\SoundDeck` に**自分自身をインストール**し（管理者権限不要）、スタートメニューのショートカットと「アプリと機能」のエントリ（そこからアンインストール可能）を作成し、ログイン時の自動起動を新しいパスに移して、そこから再起動します。ダウンロードしたファイルは削除して構いません。
+4. **更新は自動です:** 6 時間ごとに GitHub のリリースを確認し、新しい exe をダウンロードして検証（サイズ、SHA-256、同じ署名証明書）し、ウィンドウが閉じている間に差し替えます。設定 → アップデートでオフにしたり手動で更新したりできます。
+
+ポータブルで使いたい場合は `--portable` を付けて起動するか、exe の隣に `portable` という空のファイルを置いてください。
+トレイアイコン（スピーカー）を**左クリック**するとボードが開きます。
 
 > **SmartScreen について。** リリースの exe は**自己署名**で、信頼された CA による署名ではないため、Windows SmartScreen が警告することがあります — **詳細情報 → 実行**を選んでください。発行元の確認・信頼は同梱の `SoundDeck-PublicCert.cer` をインポートして行えます。信頼された商用コード署名証明書を使えば警告は完全になくなります。
 
@@ -90,10 +97,6 @@ dotnet publish -c Release -r win-x64 --self-contained true ^
   -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=false ^
   -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 ```
-
-## インストーラー（任意）
-
-[`installer/SoundDeck.iss`](installer/SoundDeck.iss) に [Inno Setup](https://jrsoftware.org/isinfo.php) スクリプトがあります。Inno Setup 6（`ISCC.exe`）でビルドすると、スタートメニューのショートカットとアンインストーラー付きの `setup.exe` ができます。
 
 ## 制限事項
 

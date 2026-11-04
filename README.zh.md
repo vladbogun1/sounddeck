@@ -37,6 +37,9 @@ SoundDeck 常驻系统托盘，把 Windows 音频变成一块**看板**：列是
 - 🌍 **多语言** —— 默认跟随系统语言，可在设置中切换。
 - 🧩 **智能合并** —— 多进程应用（Spotify、Chrome、Discord）显示为一张卡片并一起路由（可在设置中关闭）。
 - 🖱️ **托盘开关** —— 点击托盘图标打开，再点一次收起。
+- 🔄 **自动安装与自动更新** — 在任意位置运行一次 exe，它会搬到 `%LocalAppData%\Programs\SoundDeck`，之后直接从 GitHub Releases 原地更新。
+- 🙈 **隐藏从不使用的设备**（虚拟声卡、显示器等）— 设置 → 设备。
+- 📐 **窗口自适应设备数量** — 所有设备并排显示（小屏幕上自动换行）；卡片可拖到任意位置，看不到的列会在底部出现投放栏。
 
 ## 主题
 
@@ -63,9 +66,13 @@ SoundDeck 常驻系统托盘，把 Windows 音频变成一块**看板**：列是
 
 ## 安装
 
-1. 从 [最新发布](../../releases/latest) 下载 **`SoundDeck.exe`**。它是单个便携文件（自包含 .NET 8）—— 无需安装，也不需要预装 .NET。
-2. 确保系统已有 **Microsoft Edge WebView2 运行时**（Windows 10/11 通常已预装）。
-3. 运行它 —— SoundDeck 会常驻托盘（喇叭图标）。**左键点击**图标打开面板。
+1. 从[最新 Release](../../releases/latest) 下载 **`SoundDeck.exe`**（自包含 .NET 8，无需安装 .NET）。
+2. 确认已安装 **Microsoft Edge WebView2 Runtime**（新版 Windows 10/11 已预装）。
+3. 在下载位置运行一次即可。SoundDeck 会**自动安装**到 `%LocalAppData%\Programs\SoundDeck`（无需管理员权限），创建开始菜单快捷方式和「应用和功能」条目（可在那里卸载），把开机自启动改到新路径，并从那里重新启动。之后可以删除下载的文件。
+4. **自动更新：** 每 6 小时检查一次 GitHub Releases，下载新 exe 并校验（大小、SHA-256、相同的签名证书），在窗口关闭时完成替换。可在 设置 → 更新 中关闭或手动更新。
+
+想要便携版？使用 `--portable` 启动，或在 exe 旁放一个名为 `portable` 的空文件。
+**左键单击**托盘图标（扬声器）即可打开面板。
 
 > **SmartScreen 提示**：发布的 exe 为**自签名**，并非由受信任的 CA 签名，因此 Windows SmartScreen 可能会提示 —— 点击**更多信息 → 仍要运行**。可导入随发布提供的 `SoundDeck-PublicCert.cer` 查看/信任发布者。使用受信任的商业代码签名证书可彻底消除该提示。
 
@@ -90,10 +97,6 @@ dotnet publish -c Release -r win-x64 --self-contained true ^
   -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=false ^
   -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 ```
-
-## 安装程序（可选）
-
-仓库在 [`installer/SoundDeck.iss`](installer/SoundDeck.iss) 提供了 [Inno Setup](https://jrsoftware.org/isinfo.php) 脚本，用 Inno Setup 6（`ISCC.exe`）构建即可生成带开始菜单快捷方式和卸载程序的 `setup.exe`。
 
 ## 已知限制
 

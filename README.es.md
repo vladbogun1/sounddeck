@@ -37,6 +37,9 @@ SoundDeck vive en la bandeja del sistema y convierte el audio de Windows en un *
 - 🌍 **Multi-idioma** — por defecto sigue el idioma del sistema; se cambia en Ajustes.
 - 🧩 **Agrupación inteligente** — las apps multiproceso (Spotify, Chrome, Discord) aparecen como una sola tarjeta y se enrutan juntas (se puede desactivar en Ajustes).
 - 🖱️ **Alternar desde la bandeja** — clic para abrir, otro clic para ocultar.
+- 🔄 **Se instala y se actualiza sola** — ejecuta el exe una vez desde cualquier sitio; se mueve a `%LocalAppData%\Programs\SoundDeck` y después se actualiza en su sitio desde las releases de GitHub.
+- 🙈 **Oculta dispositivos** que nunca tocas (cables virtuales, monitores) en Ajustes → Dispositivos.
+- 📐 **Se adapta a tus dispositivos** — la ventana crece para mostrar todos los dispositivos lado a lado (en filas en pantallas pequeñas); arrastra una tarjeta a cualquier sitio, con una barra de destino para las columnas fuera de la vista.
 
 ## Temas
 
@@ -63,9 +66,13 @@ También incluye: Neubrutalism (por defecto), Dark glass, Material, Paper, Solar
 
 ## Instalación
 
-1. Descarga **`SoundDeck.exe`** desde la [última versión](../../releases/latest). Es un único archivo portátil (.NET 8 autocontenido) — sin instalación ni .NET requerido.
-2. Asegúrate de tener el **Runtime de Microsoft Edge WebView2** (preinstalado en Windows 10/11 actuales).
-3. Ejecútalo — SoundDeck arranca en la bandeja (icono de altavoz). **Clic izquierdo** en el icono para abrir el tablero.
+1. Descarga **`SoundDeck.exe`** de la [última release](../../releases/latest) (.NET 8 autocontenido — no necesitas .NET).
+2. Asegúrate de tener el **Microsoft Edge WebView2 Runtime** (preinstalado en Windows 10/11 actuales).
+3. Ejecútalo una vez desde donde esté. SoundDeck **se instala solo** en `%LocalAppData%\Programs\SoundDeck` (sin permisos de administrador), crea un acceso directo en el menú Inicio y una entrada en *Aplicaciones y características* (desinstala desde ahí), mueve el inicio automático a la nueva ruta y se reinicia desde allí. Después puedes borrar el archivo descargado.
+4. **Las actualizaciones son automáticas:** cada 6 horas revisa las releases de GitHub, descarga el nuevo exe, lo verifica (tamaño, SHA-256, mismo certificado de firma) y lo sustituye mientras la ventana está cerrada. Desactívalo o actualiza a mano en Ajustes → Actualizaciones.
+
+¿Prefieres una copia portable? Arráncalo con `--portable` o pon un archivo vacío llamado `portable` junto al exe.
+**Clic izquierdo** en el icono de la bandeja (altavoz) abre el tablero.
 
 > **Nota sobre SmartScreen.** El exe está **autofirmado**, no firmado por una CA de confianza, así que Windows SmartScreen puede avisar — pulsa **Más información → Ejecutar de todas formas**. Puedes inspeccionar/confiar en el editor importando `SoundDeck-PublicCert.cer` (incluido en la versión). Un certificado comercial de confianza eliminaría el aviso por completo.
 
@@ -90,10 +97,6 @@ dotnet publish -c Release -r win-x64 --self-contained true ^
   -p:PublishSingleFile=true -p:EnableCompressionInSingleFile=false ^
   -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 ```
-
-## Instalador (opcional)
-
-Hay un script de [Inno Setup](https://jrsoftware.org/isinfo.php) en [`installer/SoundDeck.iss`](installer/SoundDeck.iss). Compílalo con Inno Setup 6 (`ISCC.exe`) para generar un `setup.exe` con acceso directo en el menú Inicio y desinstalador.
 
 ## Limitaciones
 

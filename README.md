@@ -110,12 +110,6 @@ dotnet publish -c Release -r win-x64 --self-contained true ^
   -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 ```
 
-## Installer (legacy)
-
-An [Inno Setup](https://jrsoftware.org/isinfo.php) script is provided at
-[`installer/SoundDeck.iss`](installer/SoundDeck.iss). Build it with Inno Setup 6
-(`ISCC.exe`) to produce a `setup.exe` with a Start-menu shortcut and uninstaller.
-
 ## Limitations
 
 - **Mirror is device-level** — a second device mirrors the primary output. True per-app

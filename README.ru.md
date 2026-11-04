@@ -97,10 +97,6 @@ dotnet publish -c Release -r win-x64 --self-contained true ^
   -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 ```
 
-## Установщик (устарел)
-
-В [`installer/SoundDeck.iss`](installer/SoundDeck.iss) лежит скрипт [Inno Setup](https://jrsoftware.org/isinfo.php). Собери его в Inno Setup 6 (`ISCC.exe`), чтобы получить `setup.exe` с ярлыком в меню «Пуск» и деинсталлятором.
-
 ## Ограничения
 
 - **Дубль на уровне устройства** — второе устройство зеркалит основной вывод. Точечный дубль отдельного приложения требует process-loopback (в планах).
