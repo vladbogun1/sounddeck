@@ -15,9 +15,9 @@
     <RootNamespace>SoundDeck</RootNamespace>
 
     <!-- Identity / version metadata (also helps reduce AV false positives) -->
-    <Version>1.4.0</Version>
-    <FileVersion>1.4.0.0</FileVersion>
-    <AssemblyVersion>1.4.0.0</AssemblyVersion>
+    <Version>1.4.1</Version>
+    <FileVersion>1.4.1.0</FileVersion>
+    <AssemblyVersion>1.4.1.0</AssemblyVersion>
     <Company>SoundDeck</Company>
     <Product>SoundDeck</Product>
     <Authors>vladbogun1</Authors>

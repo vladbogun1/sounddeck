@@ -24,31 +24,74 @@ public class AudioService : IMMNotificationClient, IDisposable
     }
 
     // ---- Enumeration ----------------------------------------------------
+    //
+    // NAudio's Dispose() never releases the underlying COM objects, so creating
+    // MMDevice wrappers on every 1.2 s poll just piles up RCWs for the finalizer.
+    // Instead the device list (and the default id) are cached and only rebuilt when
+    // Windows reports a device change. Notifications arrive on a COM worker thread,
+    // hence the lock.
 
-    List<MMDevice> ActiveRender() =>
-        _enum.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active).ToList();
+    readonly object _cacheLock = new();
+    List<MMDevice>? _render;
+    string? _defaultId;
+    bool _defaultKnown;
 
-    MMDevice? DefaultRender()
+    List<MMDevice> ActiveRender()
     {
-        try { return _enum.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia); }
+        lock (_cacheLock)
+            return _render ??= _enum.EnumerateAudioEndPoints(DataFlow.Render, DeviceState.Active).ToList();
+    }
+
+    string? DefaultRenderId()
+    {
+        lock (_cacheLock)
+        {
+            if (_defaultKnown) return _defaultId;
+            try { _defaultId = _enum.GetDefaultAudioEndpoint(DataFlow.Render, Role.Multimedia).ID; }
+            catch { _defaultId = null; }
+            _defaultKnown = true;
+            return _defaultId;
+        }
+    }
+
+    // Drops cached wrappers; the next call re-enumerates. Old objects may still be in
+    // use by the mirror, so they are left to the GC rather than force-released.
+    void Invalidate()
+    {
+        lock (_cacheLock) { _render = null; _defaultKnown = false; }
+    }
+
+    // Fresh session list of a cached device (sessions come and go between polls).
+    static SessionCollection? SessionsOf(MMDevice dev)
+    {
+        try
+        {
+            var m = dev.AudioSessionManager;
+            m.RefreshSessions();
+            return m.Sessions;
+        }
         catch { return null; }
     }
 
     public List<DeviceDto> GetDevices()
     {
-        var def = DefaultRender();
+        var defId = DefaultRenderId();
         var list = new List<DeviceDto>();
         foreach (var d in ActiveRender())
         {
-            list.Add(new DeviceDto
+            try
             {
-                Id = d.ID,
-                Name = d.FriendlyName,
-                Volume = (int)Math.Round(d.AudioEndpointVolume.MasterVolumeLevelScalar * 100),
-                Muted = d.AudioEndpointVolume.Mute,
-                IsDefault = def != null && d.ID == def.ID,
-                Bus = GuessBus(d.FriendlyName),
-            });
+                list.Add(new DeviceDto
+                {
+                    Id = d.ID,
+                    Name = d.FriendlyName,
+                    Volume = (int)Math.Round(d.AudioEndpointVolume.MasterVolumeLevelScalar * 100),
+                    Muted = d.AudioEndpointVolume.Mute,
+                    IsDefault = d.ID == defId,
+                    Bus = GuessBus(d.FriendlyName),
+                });
+            }
+            catch { Invalidate(); }   // device vanished before the notification arrived
         }
         return list.OrderByDescending(d => d.IsDefault).ToList();  // default first
     }
@@ -70,9 +113,8 @@ public class AudioService : IMMNotificationClient, IDisposable
         var result = new Dictionary<string, SessionDto>();
         foreach (var dev in ActiveRender())
         {
-            SessionCollection sessions;
-            try { sessions = dev.AudioSessionManager.Sessions; }
-            catch { continue; }
+            var sessions = SessionsOf(dev);
+            if (sessions == null) continue;
             for (int i = 0; i < sessions.Count; i++)
             {
                 var s = sessions[i];
@@ -164,7 +206,12 @@ public class AudioService : IMMNotificationClient, IDisposable
 
     // ---- Actions --------------------------------------------------------
 
-    public int SetDefaultDevice(string deviceId) => PolicyConfig.SetDefaultForAllRoles(deviceId);
+    public int SetDefaultDevice(string deviceId)
+    {
+        int hr = PolicyConfig.SetDefaultForAllRoles(deviceId);
+        Invalidate();
+        return hr;
+    }
 
     // Route every process that belongs to the same app (same executable).
     public int RouteApp(uint pid, string deviceId)
@@ -182,9 +229,8 @@ public class AudioService : IMMNotificationClient, IDisposable
         var set = new HashSet<uint>();
         foreach (var dev in ActiveRender())
         {
-            SessionCollection ss;
-            try { ss = dev.AudioSessionManager.Sessions; }
-            catch { continue; }
+            var ss = SessionsOf(dev);
+            if (ss == null) continue;
             for (int i = 0; i < ss.Count; i++)
             {
                 uint sp = ss[i].GetProcessID;
@@ -224,9 +270,8 @@ public class AudioService : IMMNotificationClient, IDisposable
         bool byExe = GroupApps && !string.IsNullOrEmpty(exe);
         foreach (var dev in ActiveRender())
         {
-            SessionCollection sessions;
-            try { sessions = dev.AudioSessionManager.Sessions; }
-            catch { continue; }
+            var sessions = SessionsOf(dev);
+            if (sessions == null) continue;
             for (int i = 0; i < sessions.Count; i++)
             {
                 var s = sessions[i];
@@ -237,14 +282,16 @@ public class AudioService : IMMNotificationClient, IDisposable
         }
     }
 
-    public string? DefaultDeviceId => DefaultRender()?.ID;
+    public string? DefaultDeviceId => DefaultRenderId();
 
     public MMDevice? GetDevice(string id) => ActiveRender().FirstOrDefault(x => x.ID == id);
+    public bool HasDevice(string id) => GetDevice(id) != null;
 
     // ---- Change notifications (debounced) -------------------------------
 
     void Notify()
     {
+        Invalidate();
         _debounce?.Dispose();
         _debounce = new System.Threading.Timer(_ => Changed?.Invoke(), null, 300, System.Threading.Timeout.Infinite);
     }

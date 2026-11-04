@@ -86,9 +86,11 @@ public partial class App : System.Windows.Application
             };
 
             var menu = new WinForms.ContextMenuStrip();
-            var (open, exit) = TrayLabels(_controller.Language);
-            menu.Items.Add(open, null, (_, _) => _window?.ShowFromTray());
-            menu.Items.Add(exit, null, (_, _) => Shutdown());
+            var openItem = menu.Items.Add("", null, (_, _) => _window?.ShowFromTray());
+            var exitItem = menu.Items.Add("", null, (_, _) => Shutdown());
+            // Labels are read on every open, so a language change applies without a restart.
+            menu.Opening += (_, _) =>
+                (openItem.Text, exitItem.Text) = TrayLabels(_controller?.Language ?? "");
             _tray.ContextMenuStrip = menu;
 
             // Manual launch opens the window; launch-on-login passes --minimized.

@@ -146,13 +146,13 @@ public class AppController : IDisposable
 
     void ApplyProfileInternal(ProfileDto p)
     {
-        if (!string.IsNullOrEmpty(p.DefaultDeviceId) && _audio.GetDevice(p.DefaultDeviceId) != null)
+        if (!string.IsNullOrEmpty(p.DefaultDeviceId) && _audio.HasDevice(p.DefaultDeviceId))
             _audio.SetDefaultDevice(p.DefaultDeviceId);
         foreach (var s in _audio.GetSessions())
         {
             if (string.IsNullOrEmpty(s.Exe)) continue;
             if (p.Routes.TryGetValue(s.Exe.ToLowerInvariant(), out var dev)
-                && _audio.GetDevice(dev) != null)
+                && _audio.HasDevice(dev))
                 _audio.RouteApp(s.Pid, dev);
         }
     }
@@ -174,7 +174,7 @@ public class AppController : IDisposable
         var p = _store.Profiles.FirstOrDefault(x => x.Id == id);
         if (p == null) return;
         if (string.IsNullOrEmpty(p.DefaultDeviceId)) return;
-        if (_audio.GetDevice(p.DefaultDeviceId) == null) return;   // preferred device not back yet
+        if (!_audio.HasDevice(p.DefaultDeviceId)) return;   // preferred device not back yet
         if (_audio.DefaultDeviceId == p.DefaultDeviceId) return;   // already correct
         ApplyProfileInternal(p);
     }
