@@ -12,3 +12,8 @@ app/boot.log
 .vs/
 .playwright-mcp/
 *.suo
+
+# Project scratch (see D:\CLOUDE\CLAUDE.md)
+_tmp/
+_shots/
+_logs/

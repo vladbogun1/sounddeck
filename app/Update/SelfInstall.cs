@@ -15,7 +15,9 @@ public static class SelfInstall
     const string UninstallKey = @"Software\Microsoft\Windows\CurrentVersion\Uninstall\SoundDeck";
     const string RunKey = @"Software\Microsoft\Windows\CurrentVersion\Run";
 
-    public static string Dir => Path.Combine(
+    // SOUNDDECK_INSTALL_DIR: test hook — install elsewhere and leave registry/shortcuts alone.
+    static readonly string? TestDir = Environment.GetEnvironmentVariable("SOUNDDECK_INSTALL_DIR");
+    public static string Dir => TestDir ?? Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Programs", "SoundDeck");
     public static string InstalledExe => Path.Combine(Dir, "SoundDeck.exe");
     static string Shortcut => Path.Combine(
@@ -74,6 +76,7 @@ public static class SelfInstall
     // entry (version!) and the autostart path pointing at this exe.
     static void Repair()
     {
+        if (TestDir != null) return;
         try { EnsureShortcut(); } catch (Exception ex) { App.Log("shortcut: " + ex.Message); }
         try { WriteUninstallEntry(); } catch (Exception ex) { App.Log("uninstall entry: " + ex.Message); }
         try

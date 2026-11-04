@@ -86,8 +86,9 @@ public partial class App : System.Windows.Application
             };
 
             var menu = new WinForms.ContextMenuStrip();
-            menu.Items.Add("Открыть", null, (_, _) => _window?.ShowFromTray());
-            menu.Items.Add("Выход", null, (_, _) => Shutdown());
+            var (open, exit) = TrayLabels(_controller.Language);
+            menu.Items.Add(open, null, (_, _) => _window?.ShowFromTray());
+            menu.Items.Add(exit, null, (_, _) => Shutdown());
             _tray.ContextMenuStrip = menu;
 
             // Manual launch opens the window; launch-on-login passes --minimized.
@@ -97,6 +98,23 @@ public partial class App : System.Windows.Application
             Log(startMinimized ? "startup done (tray, minimized)" : "startup done (window shown)");
         }
         catch (Exception ex) { Log("STARTUP EX: " + ex); }
+    }
+
+    // Tray menu follows the app language ("" = system), like the web UI.
+    static (string, string) TrayLabels(string lang)
+    {
+        if (string.IsNullOrEmpty(lang)) lang = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName;
+        return lang switch
+        {
+            "ru" => ("Открыть", "Выход"),
+            "uk" => ("Відкрити", "Вихід"),
+            "de" => ("Öffnen", "Beenden"),
+            "es" => ("Abrir", "Salir"),
+            "fr" => ("Ouvrir", "Quitter"),
+            "zh" => ("打开", "退出"),
+            "ja" => ("開く", "終了"),
+            _ => ("Open", "Exit"),
+        };
     }
 
     bool _installWhenHidden;
@@ -121,7 +139,19 @@ public partial class App : System.Windows.Application
     {
         _installWhenHidden = false;
         Log("installing update");
-        if (_controller!.Updates.Apply(startMinimized)) Shutdown();
+        // Release audio while our exe is still in place: after the swap the single-file
+        // bundle can no longer lazy-load assemblies (NAudio) needed to shut down.
+        var updates = _controller!.Updates;
+        _controller.Dispose();
+        _controller = null;
+        if (!updates.Apply(startMinimized))
+        {
+            // Swap failed: come back as the same version rather than limp on without audio.
+            Log("update failed, restarting current version");
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(Environment.ProcessPath!,
+                $"--wait-pid {Environment.ProcessId}" + (startMinimized ? " --minimized" : "")) { UseShellExecute = false });
+        }
+        Shutdown();
     }
 
     void StartShowListener()

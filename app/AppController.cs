@@ -14,6 +14,7 @@ public class AppController : IDisposable
 
     public event Action? StateChanged;
     public UpdateCoordinator Updates { get; }
+    public string Language => _store.Settings.Language ?? "";
 
     public AppController()
     {

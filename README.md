@@ -38,6 +38,9 @@ device to send that app there. No more digging through Windows sound settings.
 - 🎨 **20 themes** — from a custom theme picker (see below).
 - 🧩 **Smart grouping** — multi-process apps (Spotify, Chrome, Discord) show as a single card and route together.
 - 🖱️ **Tray toggle** — click the tray icon to open, click again to hide.
+- 🔄 **Installs and updates itself** — run the exe once from anywhere; it moves into `%LocalAppData%\Programs\SoundDeck` and then updates in place from GitHub releases.
+- 🙈 **Hide devices** you never touch (virtual cables, monitors) in Settings → Devices.
+- 📐 **Fits your devices** — the window grows to show every device side by side (wrapping into rows on small screens); drag a card anywhere, with a drop dock for columns that are out of view.
 
 ## Themes
 
@@ -65,10 +68,18 @@ Gruvbox, Monokai, Catppuccin, Rosé Pine, OLED, Forest, Ocean, Sunset, Cyberpunk
 
 ## Install
 
-1. Download **`SoundDeck.exe`** from the [latest release](../../releases/latest).
-   It's a single portable file (self-contained .NET 8) — no installation, no .NET required.
+1. Download **`SoundDeck.exe`** from the [latest release](../../releases/latest)
+   (self-contained .NET 8 — no .NET required).
 2. Make sure the **Microsoft Edge WebView2 Runtime** is present (preinstalled on current Windows 10/11).
-3. Run it — SoundDeck starts in the tray (speaker icon). **Left-click** the icon to open the board.
+3. Run it once from wherever it landed. SoundDeck **installs itself** into
+   `%LocalAppData%\Programs\SoundDeck` (no admin rights), adds a Start-menu shortcut and an
+   entry in *Apps & features* (uninstall there), moves launch-on-login to the new path and
+   restarts from there. The downloaded file can then be deleted.
+4. **Updates are automatic:** every 6 hours it checks GitHub releases, downloads the new exe,
+   verifies it (size, sha256, same signing certificate) and swaps it in while the window is closed.
+   Turn it off or update manually in Settings → Updates.
+
+Want a portable copy instead? Start it with `--portable` or put an empty file named `portable` next to the exe.
 
 > **SmartScreen note.** The release exe is **self-signed**, not signed by a trusted CA,
 > so Windows SmartScreen may show a warning — click **More info → Run anyway**.
@@ -99,7 +110,7 @@ dotnet publish -c Release -r win-x64 --self-contained true ^
   -p:IncludeNativeLibrariesForSelfExtract=true -o publish
 ```
 
-## Installer (optional)
+## Installer (legacy)
 
 An [Inno Setup](https://jrsoftware.org/isinfo.php) script is provided at
 [`installer/SoundDeck.iss`](installer/SoundDeck.iss). Build it with Inno Setup 6
