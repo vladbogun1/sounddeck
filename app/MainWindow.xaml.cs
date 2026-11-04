@@ -29,7 +29,13 @@ public partial class MainWindow : Window
         Loaded += OnLoaded;
         if (Environment.GetEnvironmentVariable("SOUNDDECK_SHOW") != "1")
             Deactivated += (_, _) => { _hiddenTick = Environment.TickCount64; Hide(); };
-        _controller.StateChanged += () => Dispatcher.Invoke(PushState);
+        _controller.StateChanged += () => Dispatcher.BeginInvoke(PushState);
+
+        // Windows has no cheap "an app started playing" signal across all devices, so
+        // while the board is on screen re-read it; the page ignores identical states.
+        var poll = new System.Windows.Threading.DispatcherTimer { Interval = TimeSpan.FromMilliseconds(1200) };
+        poll.Tick += (_, _) => { if (IsVisible) PushState(); };
+        poll.Start();
     }
 
     async void OnLoaded(object sender, RoutedEventArgs e)
@@ -136,6 +142,23 @@ public partial class MainWindow : Window
                 case "setMirrorVolume":
                     _controller.SetMirrorVolume(root.GetProperty("value").GetInt32());
                     break;
+                case "setAutoUpdate":
+                    _controller.SetAutoUpdate(root.GetProperty("value").GetBoolean());
+                    break;
+                case "setDeviceHidden":
+                    _controller.SetDeviceHidden(Str(root, "deviceId"), root.GetProperty("value").GetBoolean());
+                    break;
+                case "checkUpdate": _ = _controller.Updates.CheckNowAsync(); break;
+                case "installUpdate": _ = _controller.Updates.InstallNowAsync(); break;
+                case "openUrl":
+                    // Only our own release pages, never arbitrary URLs from the page.
+                    var url = Str(root, "url");
+                    if (url.StartsWith("https://github.com/vladbogun1/sounddeck/", StringComparison.OrdinalIgnoreCase))
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(url) { UseShellExecute = true });
+                    break;
+                case "fit":
+                    FitTo(root.GetProperty("width").GetDouble(), root.GetProperty("height").GetDouble());
+                    break;
                 case "hide": Hide(); break;
             }
             // State-changing commands raise StateChanged, which pushes once.
@@ -173,6 +196,18 @@ public partial class MainWindow : Window
         PushState();
         // Start every session with all popovers/menus closed.
         if (_ready) Web.CoreWebView2.PostWebMessageAsJson("{\"type\":\"closePops\"}");
+    }
+
+    // The page asks for the size its content needs; clamp to the screen and stay
+    // anchored to the tray corner.
+    void FitTo(double w, double h)
+    {
+        var wa = SystemParameters.WorkArea;
+        w = Math.Clamp(Math.Round(w), 520, wa.Width - 24);
+        h = Math.Clamp(Math.Round(h), 360, wa.Height - 24);
+        if (Math.Abs(w - Width) < 2 && Math.Abs(h - Height) < 2) return;
+        Width = w; Height = h;
+        PositionNearTray();
     }
 
     void PositionNearTray()

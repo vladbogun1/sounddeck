@@ -16,7 +16,7 @@ public partial class App : System.Windows.Application
     static readonly string LogPath =
         System.IO.Path.Combine(AppContext.BaseDirectory, "boot.log");
 
-    static void Log(string s) { try { System.IO.File.AppendAllText(LogPath, DateTime.Now.ToString("HH:mm:ss") + " " + s + "\n"); } catch { } }
+    internal static void Log(string s) { try { System.IO.File.AppendAllText(LogPath, DateTime.Now.ToString("HH:mm:ss") + " " + s + "\n"); } catch { } }
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -28,6 +28,17 @@ public partial class App : System.Windows.Application
 
         try
         {
+            if (Array.Exists(e.Args, a => a.Equals("--uninstall", StringComparison.OrdinalIgnoreCase)))
+            {
+                Update.SelfInstall.Uninstall();
+                Shutdown();
+                return;
+            }
+
+            // After a self-update or self-install: wait for the previous process to
+            // exit (it holds the single-instance mutex), then drop its leftovers.
+            Update.Updater.FinishPendingUpdate(e.Args);
+
             _mutex = new System.Threading.Mutex(true, "SoundDeck_SingleInstance", out bool isNew);
             if (!isNew)
             {
@@ -46,6 +57,13 @@ public partial class App : System.Windows.Application
                 return;
             }
 
+            // First run from Downloads etc.: copy into the install folder and restart there.
+            if (Update.SelfInstall.InstallAndRelaunchIfNeeded(e.Args))
+            {
+                Shutdown();
+                return;
+            }
+
             _showEvent = new System.Threading.EventWaitHandle(false,
                 System.Threading.EventResetMode.AutoReset, ShowEventName);
             StartShowListener();
@@ -54,6 +72,7 @@ public partial class App : System.Windows.Application
             _controller = new AppController();
             Log("creating window");
             _window = new MainWindow(_controller);
+            WireUpdates();
 
             _tray = new WinForms.NotifyIcon
             {
@@ -78,6 +97,31 @@ public partial class App : System.Windows.Application
             Log(startMinimized ? "startup done (tray, minimized)" : "startup done (window shown)");
         }
         catch (Exception ex) { Log("STARTUP EX: " + ex); }
+    }
+
+    bool _installWhenHidden;
+
+    // Installing restarts the app, so an automatic install waits until the window is
+    // closed; a click on "install" restarts right away.
+    void WireUpdates()
+    {
+        _controller!.Updates.InstallRequested += now => Dispatcher.BeginInvoke(() =>
+        {
+            if (now) { Install(startMinimized: false); return; }
+            if (_window!.IsVisible) _installWhenHidden = true;
+            else Install(startMinimized: true);
+        });
+        _window!.IsVisibleChanged += (_, _) =>
+        {
+            if (!_window.IsVisible && _installWhenHidden) Install(startMinimized: true);
+        };
+    }
+
+    void Install(bool startMinimized)
+    {
+        _installWhenHidden = false;
+        Log("installing update");
+        if (_controller!.Updates.Apply(startMinimized)) Shutdown();
     }
 
     void StartShowListener()

@@ -41,6 +41,8 @@ public class SettingsDto
     public bool GroupApps { get; set; } = true;           // merge multi-process apps into one card
     public string Language { get; set; } = "";            // "" = auto (system), else e.g. "en","ru"
     public double MirrorVolume { get; set; } = 1.0;       // loudness of the mirrored stream (0..1)
+    public bool AutoUpdate { get; set; } = true;          // download + install new GitHub releases
+    public List<string> HiddenDeviceIds { get; set; } = new();  // devices never shown on the board
 }
 
 public class StateDto
@@ -52,4 +54,21 @@ public class StateDto
     public SettingsDto Settings { get; set; } = new();
     public bool MirrorActive { get; set; }
     public string? MirrorTargetDeviceId { get; set; }
+    public UpdateDto Update { get; set; } = new();
+}
+
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter))]
+public enum UpdateStatus { Idle, Checking, UpToDate, Available, Downloading, Ready, Error }
+
+public class UpdateDto
+{
+    public UpdateStatus Status { get; set; } = UpdateStatus.Idle;
+    public string CurrentVersion { get; set; } = "";
+    public string? LatestVersion { get; set; }
+    public string? ReleaseUrl { get; set; }
+    public string? Notes { get; set; }
+    public int Progress { get; set; }                 // 0..100 while downloading
+    public string? Error { get; set; }
+    public bool CanInstall { get; set; }              // exe folder writable → in-place update possible
+    public DateTime? CheckedAt { get; set; }
 }

@@ -35,13 +35,19 @@ public class Store
         catch { Settings = new(); }
     }
 
-    public void SaveProfiles()
-    {
-        try { File.WriteAllText(ProfilesPath, JsonSerializer.Serialize(Profiles, Opts)); } catch { }
-    }
+    public void SaveProfiles() => WriteAtomic(ProfilesPath, JsonSerializer.Serialize(Profiles, Opts));
+    public void SaveSettings() => WriteAtomic(SettingsPath, JsonSerializer.Serialize(Settings, Opts));
 
-    public void SaveSettings()
+    // Write-then-rename so a crash mid-save never leaves a truncated JSON file
+    // (which Load would silently replace with defaults).
+    static void WriteAtomic(string path, string json)
     {
-        try { File.WriteAllText(SettingsPath, JsonSerializer.Serialize(Settings, Opts)); } catch { }
+        try
+        {
+            var tmp = path + ".tmp";
+            File.WriteAllText(tmp, json);
+            File.Move(tmp, path, overwrite: true);
+        }
+        catch (Exception ex) { App.Log("SAVE " + path + ": " + ex.Message); }
     }
 }

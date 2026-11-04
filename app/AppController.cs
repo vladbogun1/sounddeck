@@ -1,6 +1,7 @@
 using SoundDeck.Audio;
 using SoundDeck.Model;
 using SoundDeck.Storage;
+using SoundDeck.Update;
 
 namespace SoundDeck;
 
@@ -12,9 +13,12 @@ public class AppController : IDisposable
     readonly Store _store = new();
 
     public event Action? StateChanged;
+    public UpdateCoordinator Updates { get; }
 
     public AppController()
     {
+        Updates = new UpdateCoordinator(() => _store.Settings.AutoUpdate);
+        Updates.Changed += () => StateChanged?.Invoke();
         _audio.GroupApps = _store.Settings.GroupApps;
         _audio.Changed += OnAudioChanged;
         // Restore mirror if it was on.
@@ -68,6 +72,7 @@ public class AppController : IDisposable
             Settings = _store.Settings,
             MirrorActive = _mirror.Active,
             MirrorTargetDeviceId = _mirror.TargetDeviceId,
+            Update = Updates.Info,
         };
     }
 
@@ -218,6 +223,22 @@ public class AppController : IDisposable
         StateChanged?.Invoke();
     }
 
+    public void SetAutoUpdate(bool on)
+    {
+        _store.Settings.AutoUpdate = on;
+        _store.SaveSettings();
+        StateChanged?.Invoke();
+    }
+
+    public void SetDeviceHidden(string deviceId, bool hidden)
+    {
+        var list = _store.Settings.HiddenDeviceIds ??= new();
+        list.Remove(deviceId);
+        if (hidden) list.Add(deviceId);
+        _store.SaveSettings();
+        StateChanged?.Invoke();
+    }
+
     public void SetMirror(string? secondaryDeviceId)
     {
         if (string.IsNullOrEmpty(secondaryDeviceId)) { _mirror.Stop(); _store.Settings.MirrorSecondaryDeviceId = null; }
@@ -251,6 +272,7 @@ public class AppController : IDisposable
 
     public void Dispose()
     {
+        Updates.Dispose();
         _mirror.Dispose();
         _audio.Dispose();
     }
