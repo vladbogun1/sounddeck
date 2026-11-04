@@ -2,7 +2,7 @@
 
 ## Где остановились (2026-11-04)
 
-Сделано в коммитах (локально, **не запушено, релиза нет**), версия в csproj — 1.4.0:
+**v1.4.0 выпущен** (2026-11-04, подписан `CN=SoundDeck (Self-Signed)`, запушено в main):
 
 - **Самоустановка** (`app/Update/SelfInstall.cs`): запуск exe из любого места → копия в
   `%LocalAppData%\Programs\SoundDeck`, ярлык в «Пуске», запись в «Приложения» (`--uninstall`),
@@ -22,9 +22,9 @@ Debug-сборка в реальном окне; E2E в scratch: самоуст�
 
 ## Что дальше
 
-1. Релиз v1.4.0: `dotnet publish` (команда в README), подписать exe сертификатом
-   `CN=SoundDeck (Self-Signed)` из `Cert:\CurrentUser\My`, `git push`, `gh release create v1.4.0`
-   с ассетами `SoundDeck.exe` + `SoundDeck-PublicCert.cer`. Имя ассета должно быть ровно `SoundDeck.exe`.
+1. Следующий релиз: поднять версию в csproj, `dotnet publish` (команда в README), подписать
+   signtool `/sha1 E8CF795F… /s My /fd SHA256 /tr http://timestamp.digicert.com`, `gh release create vX.Y.Z`
+   с ассетами `SoundDeck.exe` + `SoundDeck-PublicCert.cer`. Имя ассета ровно `SoundDeck.exe`, тег `vX.Y.Z`.
 2. У пользователя сейчас запущен `Downloads\SoundDeck (1).exe` (1.3.0) — после релиза один раз
    запустить новый exe, он сам установится. 1.3.0 обновиться сам не может (в нём нет апдейтера).
 3. Хвосты из ревью (не сделано):
