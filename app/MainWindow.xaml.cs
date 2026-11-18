@@ -53,6 +53,13 @@ public partial class MainWindow : Window
         Web.CoreWebView2.WebMessageReceived += OnWebMessage;
         Web.CoreWebView2.Settings.AreDefaultContextMenusEnabled = false;
         Web.CoreWebView2.Settings.IsStatusBarEnabled = false;
+        // The page sizes the window in CSS pixels, which only match window pixels at
+        // 100% zoom. Ctrl+wheel over a slider used to zoom the page and leave the
+        // content cropped, so zoom is off and pinned to 1.
+        Web.CoreWebView2.Settings.IsZoomControlEnabled = false;
+        Web.CoreWebView2.Settings.IsPinchZoomEnabled = false;
+        Web.ZoomFactor = 1.0;
+        Web.ZoomFactorChanged += (_, _) => { if (Web.ZoomFactor != 1.0) Web.ZoomFactor = 1.0; };
 
         Web.CoreWebView2.Navigate("https://sounddeck.local/index.html");
         Web.CoreWebView2.NavigationCompleted += (_, _) => { _ready = true; PushState(); };
