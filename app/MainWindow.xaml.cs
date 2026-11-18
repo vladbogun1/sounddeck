@@ -198,6 +198,7 @@ public partial class MainWindow : Window
     {
         PositionNearTray();
         Show();
+        if (_pendingFit is var (w, h)) FitTo(w, h);
         Activate();
         Topmost = true;
         PushState();
@@ -205,10 +206,18 @@ public partial class MainWindow : Window
         if (_ready) Web.CoreWebView2.PostWebMessageAsJson("{\"type\":\"closePops\"}");
     }
 
+    // Size the page asked for while the window was hidden; applied on the next show.
+    (double W, double H)? _pendingFit;
+
     // The page asks for the size its content needs; clamp to the screen and stay
     // anchored to the tray corner.
     void FitTo(double w, double h)
     {
+        // A resize while hidden reaches the window but not the WebView2 inside it: the
+        // page keeps its old viewport after Show() and is cropped or leaves a blank
+        // margin. So hold the size until the window is on screen.
+        if (!IsVisible) { _pendingFit = (w, h); return; }
+        _pendingFit = null;
         var wa = SystemParameters.WorkArea;
         w = Math.Clamp(Math.Round(w), 380, wa.Width - 24);
         h = Math.Clamp(Math.Round(h), 360, wa.Height - 24);
